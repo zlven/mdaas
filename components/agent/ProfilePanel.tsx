@@ -3,6 +3,7 @@
 import { useCallback, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { FIELD, LABEL } from "@/components/ui/field";
 import { Notice } from "@/components/ui/Notice";
 import type { AgentConfig, ProfileField } from "@/lib/agents/types";
@@ -35,21 +36,19 @@ import {
  */
 
 /**
- * The collapsed row, matching the tools strip and `RetrievalPanel`'s `<details>`.
+ * The collapsed row, in the same `Disclosure` the tools strip uses.
  *
  * The summary carries the noun (「我的档案」) because there is no heading above it
  * — the PRD wireframe (§3.3) puts these strips in one line each above the
  * conversation, where a two-line heading-plus-summary would push the answer down.
+ *
+ * It stays **one line** where the tool rows are two, and the difference is what
+ * the second half is: 已填 3 项 is a status, which belongs beside the thing it
+ * describes, whereas the tools' second line is a promise that only works as its
+ * own line (`docs/03_UI_UX_SPEC.md` §5).
  */
-function Strip({ summary, children }: { summary: string; children: ReactNode }) {
-  return (
-    <details className="group">
-      <summary className="cursor-pointer list-none text-small text-ink-muted transition-colors duration-150 ease-out hover:text-ink group-open:text-ink">
-        我的档案 · {summary}
-      </summary>
-      <div className="mt-3">{children}</div>
-    </details>
-  );
+function Strip({ summary, children }: { summary: string; children?: ReactNode }) {
+  return <Disclosure summary={`我的档案 · ${summary}`}>{children}</Disclosure>;
 }
 
 function ProfileInput({
@@ -127,7 +126,7 @@ function ProfileForm({ agent, nudge }: { agent: AgentConfig; nudge: boolean }) {
   if (snapshot.status === "loading") {
     return (
       <Strip summary="读取中…">
-        <p className="text-small text-ink-subtle">读取中…</p>
+        <p className="text-small text-ink-muted">正在读取这个浏览器里保存的档案…</p>
       </Strip>
     );
   }

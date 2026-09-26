@@ -65,23 +65,26 @@ export default function SpeakingTime({ onSend, ready, busy }: ToolProps) {
         />
       </div>
 
-      <div className="text-small" aria-live="polite">
-        {hasText ? (
-          <p className="text-ink">
-            {chars} 字，读完大约{" "}
-            <strong className="font-semibold">
-              {formatDuration(secondsFast)} – {formatDuration(secondsSlow)}
-            </strong>
-            。
-          </p>
-        ) : (
-          <p className="text-ink-subtle">粘贴文案，估算读出来要多久。</p>
-        )}
-      </div>
+      <div className="space-y-2">
+        <div aria-live="polite">
+          {hasText ? (
+            <>
+              {/* The word count moves into the label: it is the input restated,
+                  and the duration is what the user came for. */}
+              <p className="text-micro text-ink-subtle">{chars} 字，读完大约</p>
+              <p className="text-h2 font-semibold tabular-nums text-ink">
+                {formatDuration(secondsFast)} – {formatDuration(secondsSlow)}
+              </p>
+            </>
+          ) : (
+            <p className="text-small text-ink-subtle">粘贴文案，估算读出来要多久。</p>
+          )}
+        </div>
 
-      <p className="text-micro text-ink-subtle">
-        估算依据：中文口播每分钟约 {RATE_SLOW}–{RATE_FAST} 字，标点计入。实际时长取决于语速和停顿。
-      </p>
+        <p className="text-micro text-ink-subtle">
+          估算依据：中文口播每分钟约 {RATE_SLOW}–{RATE_FAST} 字，标点计入。实际时长取决于语速和停顿。
+        </p>
+      </div>
 
       <ResultSend result={hasText ? result : null} onSend={onSend} ready={ready} busy={busy} />
     </div>

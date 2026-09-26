@@ -222,17 +222,55 @@ Both rails collapse below `lg`. The **centre column never exceeds ~720px** — f
 Above the conversation, in the centre column:
 
 ```
-▸ 我的档案 · 已填 3 项
-▸ 工具 · 会议成本
+┌──────────────────────────────────────────────┐
+│ ⌄  我的档案 · 已填 3 项                       │
+└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ ⌄  会议成本                                   │
+│    按人数、时长和平均时薪，算出这场会花掉多少钱。│
+└──────────────────────────────────────────────┘
 ```
 
-- Each is a `<details>` collapsed to a single line by default — the same interaction as the retrieved-context panel, which makes keyboard operation free.
+- Each is a `<details>` collapsed by default — the same interaction as the retrieved-context panel, which makes keyboard operation free.
+- **They take the same treatment as the suggested-prompt buttons** below them: `--surface` fill, 1px `--line`, hover to `--line-strong`. That is already what this page looks like when something is clickable, so the strips are not inventing a style — they were the one control on the screen that did not wear it.
+- **A collapsed row must look like a control, and this is a requirement rather than decoration.** The native `<summary>` marker is browser-inconsistent, so it is hidden — but hiding it *without* drawing a replacement leaves a line of grey text with no affordance at all. That failure is invisible on a desktop pointer (`cursor: pointer` is the only remaining hint) and total on a touch screen, which has no cursor. Every collapsed row therefore carries a drawn chevron that rotates 180° on open, a `--surface` fill inside a 1px `--line` border, and a hover state that darkens the border to `--line-strong`. All four live in `components/ui/Disclosure.tsx` so the four collapsed rows in the workspace — the two strips, the hits section and each chunk inside it — cannot drift apart. The chevron sits **left of the text**, aligned to the first line, because the tool rows are two lines and a centred icon would float into the gap between them.
+- A row inside another row (a chunk inside the hits section) takes the same chevron without the border. A second bordered box within a bordered box reads as a mistake.
+- **The tool row is two lines: the name, then one line saying what the tool does.** A tool hidden behind an unmarked click is a tool nobody opens, and the name alone does not say what opening it would get you. The profile row stays one line because its second half is a *status* (已填 3 项), not a promise.
 - **Centre column, not the right rail.** The rail describes the agent; these are things the user operates. The rail goes on listing tool *names* as description.
 - **Mounted exactly once.** They hold input state, and the narrow-screen adaptation *duplicates* the rail rather than moving it, so a component with drafts mounted twice has two independent drafts — typing on a narrow viewport and then widening the window would silently discard the input. The centre column is the only zone present at every breakpoint, so it is the only correct home.
 - **Loading is not empty.** While the profile is being read the strip says 读取中. Rendering the empty state first and filling it in a frame later tells the user their data is gone.
 - The profile form reuses §8's field styling and carries a two-step 清空档案 confirmation. Its footer states that the profile is stored in this browser, does not sync across devices, and may be overwritten when several tabs are open.
 - When the browser refuses storage, a **neutral**-coloured notice appears inside the strip — not `--danger`. The user has done nothing wrong, and a permanently-red banner teaches people to ignore red.
 - When the profile is empty and there is no conversation yet, the empty state gains one line above the suggested prompts inviting the user to fill it in. This is the product's onboarding moment, not chrome.
+
+### The expanded tool
+
+An instant tool needs no API key, so it is the first thing on the page that does something. Its expanded body is a small panel, not a form dropped into the conversation:
+
+```
+⌄ 会议成本                                        ┐
+  按人数、时长和平均时薪，算出这场会花多少钱。      ┘ ← Small, --ink-muted
+  ────────────────────────────────────────────────
+  参会人数（人）  会议时长（分钟）  平均时薪（元）   ┐
+  [ 8         ]  [ 60          ]  [ 150       ]   ┘ ← §8 field styling
+
+  这场会成本约                                      ┐
+  1200 元                                          │ ← H2 / 600 / tabular-nums.
+  每人约 150 元                                     │    The answer is the anchor,
+                                                   ┘    not a clause in a sentence.
+  只算参会人的时间成本，不含场地、差旅和会前准备。     ← Micro, --ink-subtle
+  ────────────────────────────────────────────────
+  [ 把结果发给专家 ]   先在设置里填好 API Key       ← secondary, md
+```
+
+The whole box is one `<details>`: the `--surface` fill and the drawn chevron are the header's, the hairline is the body's, and the action row closes it.
+
+- **The answer is typographically the largest thing in the panel.** It was previously a clause inside a sentence at `--small`, with the estimation basis at `--micro` directly beneath — four steps of an already-narrow type scale apart, so the number read as one more word in the sentence and the caveat as its continuation. The answer now takes `--h2` with `tabular-nums`, on its own line under a `--micro` label; the number is the anchor and everything else qualifies it. The basis stays `--micro`, grouped with the answer rather than left as the next item of the panel's spacing.
+- **The panel's numbers are not grouped or symbolised** — `1200 元`, not `¥ 1,200`. Thousands separators would mean `toLocaleString`, whose output depends on the runtime's ICU data, and a tool that renders differently on two machines is the kind of drift `04_AGENT_SPEC.md` §7 rules out for constants. The unit suffix matches the input labels.
+- **The tool's own description is `--small` `--ink-muted`, not `--micro` `--ink-subtle`.** It is the only thing telling the user what the panel is for, and `--micro --ink-subtle` is the least legible combination on the page.
+- **The action sits in a footer row behind a hairline** — the same construction as the profile form's 清空档案 row. It stays `secondary`: §2 allows one `--accent` action per screen and the chat input's 发送 already holds it. Prominence comes from the contained panel and the footer, not from colour.
+- **Disabled with a reason, never hidden** (`04_AGENT_SPEC.md` §7). 「先在设置里填好 API Key」 is the difference between a dead end and an instruction.
+- **Estimates stay labelled as estimates**, with the range and its basis visible. `04_AGENT_SPEC.md` §7 forbids drifting constants and requires a range to be shown as one.
 
 ### The retrieved-context panel
 

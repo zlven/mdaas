@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
+import { NumberField } from "@/components/tools/NumberField";
 import { ResultSend } from "@/components/tools/ResultSend";
 import type { ToolProps } from "@/components/tools/types";
-import { FIELD, LABEL } from "@/components/ui/field";
 import { parseAmount } from "@/lib/tools/estimate";
 
 /**
@@ -32,43 +32,6 @@ const TEF = {
   carb: { low: 0.05, high: 0.1 },
   fat: { low: 0, high: 0.03 },
 } as const;
-
-function Amount({
-  id,
-  label,
-  unit,
-  value,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  unit: string;
-  value: string;
-  onChange: (next: string) => void;
-}) {
-  const inputId = `food-tef-${id}`;
-  return (
-    <div>
-      {/* The unit lives in the label, not as a suffix in the field: 「175」 in a
-          box marked 「身高（cm）」 is unambiguous, where a suffix invites someone
-          to type 「175cm」. */}
-      <label htmlFor={inputId} className={LABEL}>
-        {label}（{unit}）
-      </label>
-      <input
-        id={inputId}
-        // `type="number"` would add spinners and accept "e"; decimal input mode
-        // gets the numeric keypad on a phone without either.
-        type="text"
-        inputMode="decimal"
-        autoComplete="off"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={FIELD}
-      />
-    </div>
-  );
-}
 
 export default function FoodTef({ onSend, ready, busy }: ToolProps) {
   const [protein, setProtein] = useState("");
@@ -104,28 +67,42 @@ export default function FoodTef({ onSend, ready, busy }: ToolProps) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Amount id="protein" label="蛋白质" unit="g" value={protein} onChange={setProtein} />
-        <Amount id="carb" label="碳水" unit="g" value={carb} onChange={setCarb} />
-        <Amount id="fat" label="脂肪" unit="g" value={fat} onChange={setFat} />
+        <NumberField id="food-tef-protein" label="蛋白质" unit="g" value={protein} onChange={setProtein} />
+        <NumberField id="food-tef-carb" label="碳水" unit="g" value={carb} onChange={setCarb} />
+        <NumberField id="food-tef-fat" label="脂肪" unit="g" value={fat} onChange={setFat} />
       </div>
 
-      <div className="text-small" aria-live="polite">
-        {answered ? (
-          <p className="text-ink">
-            这一餐约 <strong className="font-semibold">{Math.round(intake)}</strong> kcal，其中消化本身消耗约{" "}
-            <strong className="font-semibold">
-              {low}–{high}
-            </strong>{" "}
-            kcal。
-          </p>
-        ) : (
-          <p className="text-ink-subtle">填上这一餐的克数，就能算出消化本身要花掉多少能量。</p>
-        )}
-      </div>
+      {/* The TEF range is the answer and takes the large type, not the total
+          intake: this tool's whole reason to exist is the number people do not
+          have, and 蛋白质×4＋碳水×4＋脂肪×9 is arithmetic anyone can do
+          (see the note above). The intake is context and sits under it. */}
+      {/* The basis is grouped with the number it qualifies rather than left as
+          the next item in the panel's `space-y-4` — 16px below the result reads
+          as a new section, when it is really a footnote to the one above. It
+          stays outside `aria-live` so a screen reader is not made to re-read
+          the method on every keystroke. */}
+      <div className="space-y-2">
+        <div aria-live="polite">
+          {answered ? (
+            <>
+              <p className="text-micro text-ink-subtle">消化本身要消耗</p>
+              <p className="text-h2 font-semibold tabular-nums text-ink">
+                {low}–{high}
+                <span className="ml-1 text-small font-normal text-ink-muted">kcal</span>
+              </p>
+              <p className="mt-1 text-small text-ink-muted">
+                这一餐合计约 <span className="tabular-nums">{Math.round(intake)}</span> kcal。
+              </p>
+            </>
+          ) : (
+            <p className="text-small text-ink-subtle">填上这一餐的克数，就能算出消化本身要花掉多少能量。</p>
+          )}
+        </div>
 
-      <p className="text-micro text-ink-subtle">
-        估算依据：蛋白质 20–30%、碳水 5–10%、脂肪 0–3% 的热量用于消化。这是范围值，不是精确结果。
-      </p>
+        <p className="text-micro text-ink-subtle">
+          估算依据：蛋白质 20–30%、碳水 5–10%、脂肪 0–3% 的热量用于消化。这是范围值，不是精确结果。
+        </p>
+      </div>
 
       <ResultSend result={answered ? result : null} onSend={onSend} ready={ready} busy={busy} />
     </div>

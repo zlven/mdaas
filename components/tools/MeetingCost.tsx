@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
+import { NumberField } from "@/components/tools/NumberField";
 import { ResultSend } from "@/components/tools/ResultSend";
 import type { ToolProps } from "@/components/tools/types";
-import { FIELD, LABEL } from "@/components/ui/field";
 import { parseAmount } from "@/lib/tools/estimate";
 
 /**
@@ -19,38 +19,6 @@ import { parseAmount } from "@/lib/tools/estimate";
  * average would be an invented external fact that drifts and that we could not
  * source — and it is the input the user is most likely to have a real number for.
  */
-
-function Figure({
-  id,
-  label,
-  unit,
-  value,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  unit: string;
-  value: string;
-  onChange: (next: string) => void;
-}) {
-  const inputId = `meeting-cost-${id}`;
-  return (
-    <div>
-      <label htmlFor={inputId} className={LABEL}>
-        {label}（{unit}）
-      </label>
-      <input
-        id={inputId}
-        type="text"
-        inputMode="decimal"
-        autoComplete="off"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={FIELD}
-      />
-    </div>
-  );
-}
 
 export default function MeetingCost({ onSend, ready, busy }: ToolProps) {
   const [people, setPeople] = useState("");
@@ -76,24 +44,33 @@ export default function MeetingCost({ onSend, ready, busy }: ToolProps) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Figure id="people" label="参会人数" unit="人" value={people} onChange={setPeople} />
-        <Figure id="minutes" label="会议时长" unit="分钟" value={minutes} onChange={setMinutes} />
-        <Figure id="rate" label="平均时薪" unit="元" value={rate} onChange={setRate} />
+        <NumberField id="meeting-cost-people" label="参会人数" unit="人" value={people} onChange={setPeople} />
+        <NumberField id="meeting-cost-minutes" label="会议时长" unit="分钟" value={minutes} onChange={setMinutes} />
+        <NumberField id="meeting-cost-rate" label="平均时薪" unit="元" value={rate} onChange={setRate} />
       </div>
 
-      <div className="text-small" aria-live="polite">
-        {complete ? (
-          <p className="text-ink">
-            这场会成本约 <strong className="font-semibold">{Math.round(total)}</strong> 元。
-          </p>
-        ) : (
-          <p className="text-ink-subtle">三个数字都填上，成本才算得出来。</p>
-        )}
-      </div>
+      <div className="space-y-2">
+        <div aria-live="polite">
+          {complete ? (
+            <>
+              <p className="text-micro text-ink-subtle">这场会成本约</p>
+              <p className="text-h2 font-semibold tabular-nums text-ink">
+                {Math.round(total)}
+                <span className="ml-1 text-small font-normal text-ink-muted">元</span>
+              </p>
+              <p className="mt-1 text-small text-ink-muted">
+                每人约 <span className="tabular-nums">{Math.round(hours * (hourly ?? 0))}</span> 元。
+              </p>
+            </>
+          ) : (
+            <p className="text-small text-ink-subtle">三个数字都填上，成本才算得出来。</p>
+          )}
+        </div>
 
-      <p className="text-micro text-ink-subtle">
-        只算参会人的时间成本，不含场地、差旅和会前准备。时薪用你自己的数字更准。
-      </p>
+        <p className="text-micro text-ink-subtle">
+          只算参会人的时间成本，不含场地、差旅和会前准备。时薪用你自己的数字更准。
+        </p>
+      </div>
 
       <ResultSend result={complete ? result : null} onSend={onSend} ready={ready} busy={busy} />
     </div>

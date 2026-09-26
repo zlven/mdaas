@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { TOOL_COMPONENTS } from "@/components/tools/registry";
 import type { ToolProps } from "@/components/tools/types";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { TOOL_DEFINITIONS, type ToolId } from "@/lib/tools/types";
 
 /**
@@ -23,8 +24,16 @@ import { TOOL_DEFINITIONS, type ToolId } from "@/lib/tools/types";
  * of the agent, like 能力 or 知识库, and not an operation — which is why the name
  * lives in `lib/tools/types.ts` rather than inside the lazily-loaded component.
  *
- * Each tool is a `<details>`, the same interaction language as `RetrievalPanel`:
- * keyboard operation and screen-reader announcement come for free (§11).
+ * Each tool is a `<Disclosure>`, the same interaction language as `RetrievalPanel`
+ * — the drawn chevron lives in `components/ui/Disclosure.tsx`, because hiding
+ * `summary`'s native marker without drawing a replacement is what made these
+ * rows read as labels rather than controls.
+ *
+ * The collapsed row carries the tool's name **and the one line saying what it
+ * does**. §5 requires it: 「会议成本」 alone is a noun a first-time visitor cannot
+ * price, and the description is the only thing on the page that sells the tool.
+ * There is no 「工具 · 」 prefix — the section is labelled for assistive tech, and
+ * the promise line says what this is far better than the word 工具 did.
  */
 
 function ToolSection({ id, onSend, ready, busy }: { id: ToolId } & ToolProps) {
@@ -36,27 +45,22 @@ function ToolSection({ id, onSend, ready, busy }: { id: ToolId } & ToolProps) {
   const Tool = TOOL_COMPONENTS[id];
 
   return (
-    <details
-      className="group"
+    <Disclosure
+      summary={
+        <>
+          <span className="font-medium">{definition.label}</span>
+          <span className="mt-0.5 block text-ink-muted">{definition.description}</span>
+        </>
+      }
       onToggle={(event) => {
         if (event.currentTarget.open) setOpened(true);
       }}
     >
-      <summary className="cursor-pointer list-none text-small text-ink-muted transition-colors duration-150 ease-out hover:text-ink group-open:text-ink">
-        工具 · {definition.label}
-      </summary>
-
-      <div className="mt-3">
-        {/* Rendered on first open rather than on load, so the lazy chunk is
-            fetched when the tool is wanted and not when the page is. */}
-        {opened ? (
-          <>
-            <p className="mb-3 text-micro text-ink-subtle">{definition.description}</p>
-            <Tool onSend={onSend} ready={ready} busy={busy} />
-          </>
-        ) : null}
-      </div>
-    </details>
+      {/* Rendered on first open rather than on load, so the lazy chunk is
+          fetched when the tool is wanted and not when the page is. The
+          description is not repeated here — it is in the row above. */}
+      {opened ? <Tool onSend={onSend} ready={ready} busy={busy} /> : null}
+    </Disclosure>
   );
 }
 
@@ -68,8 +72,10 @@ export function ToolPanel({
 }: { tools: readonly ToolId[] } & ToolProps) {
   if (tools.length === 0) return null;
 
+  // Two bordered panels stacked flush would read as one, so they are spaced —
+  // which matters as soon as an agent declares a second tool.
   return (
-    <section aria-label="工具">
+    <section aria-label="工具" className="space-y-2">
       {tools.map((id) => (
         <ToolSection key={id} id={id} onSend={onSend} ready={ready} busy={busy} />
       ))}
