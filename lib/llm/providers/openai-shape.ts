@@ -284,8 +284,13 @@ export function createOpenAIShapeProvider(cfg: OpenAIShapeConfig): ModelProvider
 
         if (!res.ok) {
           // Some compatible endpoints do not implement /models. That is not an
-          // auth failure, so fall back to a minimal completion (05_API_SPEC.md
-          // §5) rather than reporting a key problem that does not exist.
+          // auth failure, so this must not be reported as a key problem.
+          //
+          // 05_API_SPEC.md §5 asks for a minimal chat completion here. That is
+          // **not implemented**: `validate(creds)` is given no model name, so
+          // there is nothing to complete with. What a 404 does establish is that
+          // the host answered — so the result is `ok` with an empty model list,
+          // and Settings says in as many words that the key was not checked.
           if (res.status === 404 && cfg.id === "compatible") {
             return { ok: true, models: [] };
           }

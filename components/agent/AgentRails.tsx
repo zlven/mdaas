@@ -1,0 +1,83 @@
+import { tintOf } from "@/components/agent/tint";
+import type { AgentConfig } from "@/lib/agents/types";
+
+/**
+ * The workspace's two rails — docs/03_UI_UX_SPEC.md §5.
+ *
+ * Neither holds state, and `AgentIdentity` is rendered by the page so the
+ * identity block is part of the agent's own markup. `AgentFacts` is rendered from
+ * `Workspace`, because its 「本次检索」 section is per-turn state that lives there;
+ * that pulls this file into the client bundle, which for two static blocks is the
+ * cheaper side of the trade.
+ */
+
+export function AgentIdentity({ agent }: { agent: AgentConfig }) {
+  return (
+    <aside className="hidden w-60 shrink-0 lg:block">
+      <div className="sticky top-24">
+        <span
+          aria-hidden="true"
+          className="icon-plate flex size-10 items-center justify-center rounded-[var(--radius)] text-h2"
+          style={{ "--tint": tintOf(agent) } as React.CSSProperties}
+        >
+          {agent.icon}
+        </span>
+
+        <h1 className="mt-4 text-h2 font-semibold text-ink">{agent.nameZh}</h1>
+        <p className="text-small text-ink-muted">
+          {agent.name} · <span className="text-ink-subtle">AI 智能体</span>
+        </p>
+
+        <p className="mt-4 text-small text-ink-muted">{agent.description}</p>
+
+        <ul className="mt-6 flex flex-wrap gap-2">
+          {agent.capabilities.map((capability) => (
+            <li key={capability} className="rounded-[var(--radius-sm)] bg-surface-alt px-2 py-1 text-micro text-ink-muted">
+              {capability}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+  );
+}
+
+function Fact({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-micro font-medium text-ink-subtle">{label}</h3>
+      <div className="mt-1 text-small text-ink-muted">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The right rail. Sections with nothing in them are omitted rather than shown
+ * empty — `tools` is `[]` for every agent in the MVP, and a "工具：无" line is
+ * noise that makes the product look unfinished. The condition is on the value,
+ * not hardcoded, so the first agent that does take tools gets the section.
+ *
+ * `retrieval` is a slot: the panel below it is client-rendered because what was
+ * retrieved is per-turn state.
+ */
+export function AgentFacts({ agent, retrieval }: { agent: AgentConfig; retrieval: React.ReactNode }) {
+  return (
+    <aside className="hidden w-72 shrink-0 lg:block">
+      <div className="sticky top-24 space-y-6">
+        <Fact label="能做什么">{agent.capabilities.join(" · ")}</Fact>
+
+        <Fact label="知识库">
+          {agent.knowledgeBase === null
+            ? "未接入"
+            : `已接入 ${agent.knowledgeBase} 的知识库，打开对话时按需下载`}
+        </Fact>
+
+        {agent.tools.length > 0 ? <Fact label="工具">{agent.tools.join(" · ")}</Fact> : null}
+
+        {agent.workflows.length > 0 ? <Fact label="工作流">{agent.workflows.join(" · ")}</Fact> : null}
+
+        {retrieval}
+      </div>
+    </aside>
+  );
+}

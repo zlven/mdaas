@@ -64,3 +64,18 @@ export function formatContext(hits: RetrievedChunk[]): string | null {
   lines.push(REFERENCE_END);
   return lines.join("\n");
 }
+
+/**
+ * The system prompt as the model will receive it: the agent's own prompt, then
+ * the reference block when there is one.
+ *
+ * This one line is where §8.6's boundary is actually drawn, so it is named and
+ * exported rather than inlined into the component that calls it. "No hits means
+ * no block" (§8.8) is precisely the kind of rule that disappears in a refactor
+ * that looks harmless, and it is the rule every agent prompt's §8.3 clause is
+ * written against.
+ */
+export function composeSystemPrompt(systemPrompt: string, hits: RetrievedChunk[]): string {
+  const block = formatContext(hits);
+  return block === null ? systemPrompt : `${systemPrompt}\n\n${block}`;
+}

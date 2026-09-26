@@ -134,3 +134,49 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================================
+   Agent icon plate — docs/03_UI_UX_SPEC.md §2, §4
+
+   Each agent gets its own hue; everything else on the card stays neutral. That
+   restraint is what keeps ten cards from reading as a toy.
+
+   The hue is derived from the agent id and passed in as `--tint`, rather than
+   stored on the config. A `tint` field would have to be filled in for every new
+   agent, and C4 asks that adding an eleventh agent touch nothing but
+   `lib/agents/configs/`. Deriving it also keeps the eleven hues evenly spread
+   instead of drifting as agents are added.
+
+   Saturation and lightness are fixed here, not derived, so every hue is equally
+   restrained. At 12% opacity a hue's only job is to tell neighbouring cards
+   apart — it is never load-bearing information.
+   ========================================================================= */
+
+.icon-plate {
+  background: color-mix(in srgb, hsl(var(--tint) 42% 46%) 12%, transparent);
+}
+
+/* ============================================================================
+   Streaming caret — docs/03_UI_UX_SPEC.md §5
+
+   A caret at the end of the text being written, not a spinner replacing the
+   message. The global `prefers-reduced-motion` rule above already collapses the
+   animation to a single frame, which leaves the caret visible and still — the
+   caret is the signal that text is arriving; only the blinking is decoration.
+   ========================================================================= */
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: text-bottom;
+  background: var(--color-ink-muted);
+  animation: caret-blink 1s step-end infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
