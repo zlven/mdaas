@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Design tokens — docs/03_UI_UX_SPEC.md §2
+
+   Tailwind v4 is configured here, in CSS. There is no tailwind.config.js.
+   Values in @theme become both CSS custom properties and utilities, so
+   `--color-ink` yields `text-ink` / `bg-ink` / `border-ink`.
+
+   Do not introduce ad-hoc hex values in components. If a value is missing,
+   add it here first. (docs/06_ACCEPTANCE.md J1)
+   ========================================================================= */
+
+@theme {
+  /* --- Colour -------------------------------------------------------------
+     Near-monochrome on purpose. The interface is not where colour lives —
+     the agents' icons are. One accent, used for the primary action on a
+     screen and for active state. Nowhere else. */
+  --color-bg: #fafaf9;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f4f4f5;
+
+  /* Hairlines. Named `line`, not `border`, so the utility reads `border-line`
+     rather than the stuttering `border-border`. */
+  --color-line: #e7e7e4;
+  --color-line-strong: #d4d4d1;
+
+  /* Text. Named `ink` so the utility reads `text-ink`, not `text-text`. */
+  --color-ink: #18181b;
+  --color-ink-muted: #6b6b70;
+  --color-ink-subtle: #9a9aa0;
+
+  --color-accent: #2f5d62;
+  --color-accent-hover: #26494d;
+  --color-accent-fg: #ffffff;
+
+  /* Status colour appears only on genuine status: the Coming Soon badge,
+     workflow failure, errors. Never for decoration. */
+  --color-success: #3f7a4e;
+  --color-warning: #a8702b;
+  --color-danger: #b3453c;
+
+  /* --- Type ---------------------------------------------------------------
+     The Chinese fallbacks are not optional. A stack that resolves to a Latin
+     font with a fallback CJK face produces inconsistent weight and spacing
+     across a mixed-script page.
+
+     Deliberately NOT a webfont: next/font/google fetches from Google at build
+     time, which fails or hangs on CI and on machines in mainland China. The
+     system stack also renders Chinese more correctly, since the OS picks the
+     right CJK face. */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Body line-height is 1.7, not 1.5. Chinese glyphs are full-height and
+     dense; 1.5 reads as cramped and is the single most common thing that
+     makes a Chinese UI look unfinished. */
+  --text-display: 48px;
+  --text-display--line-height: 1.1;
+  --text-h1: 30px;
+  --text-h1--line-height: 1.3;
+  --text-h2: 20px;
+  --text-h2--line-height: 1.4;
+  --text-h3: 16px;
+  --text-h3--line-height: 1.5;
+  --text-body: 15px;
+  --text-body--line-height: 1.7;
+  --text-small: 13px;
+  --text-small--line-height: 1.6;
+  --text-micro: 12px;
+  --text-micro--line-height: 1.4;
+
+  /* --- Shape -------------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+
+  /* --- Elevation ----------------------------------------------------------
+     Prefer a 1px border over a shadow. This shadow is reserved for genuinely
+     floating layers: dialogs, dropdowns, popovers. */
+  --shadow-pop:
+    0 4px 16px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.06);
+}
+
+/* ============================================================================
+   Base
+   ========================================================================= */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Spacing scale is Tailwind's default numeric scale, which already contains
+   every value docs/03_UI_UX_SPEC.md §2 specifies:
+   4px=p-1 · 8px=p-2 · 12px=p-3 · 16px=p-4 · 24px=p-6 · 32px=p-8 · 48px=p-12 ·
+   64px=p-16 · 96px=p-24 */
+
+/* ============================================================================
+   Focus — docs/03_UI_UX_SPEC.md §11
+
+   A visible focus ring everywhere. Never `outline: none` without a
+   replacement. Keyboard operability is an acceptance criterion (J4, J5).
+   ========================================================================= */
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================================
+   Motion — 150–200ms, ease-out, opacity and transform only
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

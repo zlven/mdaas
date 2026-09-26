@@ -1,0 +1,21 @@
+# Normalise line endings in the repository, regardless of the OS that commits.
+#
+# Without this, Windows (CRLF) and macOS/Linux (LF) contributors rewrite every
+# file they touch, and the Chinese markdown in prompts/ and knowledge/ shows up
+# as fully-modified in every diff even when nothing changed.
+* text=auto eol=lf
+
+# Binary — never touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Keep lockfiles out of diffs and merge statistics; they are generated.
+package-lock.json -diff -merge linguist-generated=true
+
+# Markdown in this repo is documentation and knowledge content, not vendored.
+*.md text eol=lf
