@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+# Builds the static export and publishes it. There is no server anywhere in
+# this pipeline — the artefact is plain files (docs/02_TECH_SPEC.md C1).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. A queued run supersedes an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm run build` is the single entry point. Once the asset build script
+      # lands it is chained into this command, so this workflow does not need to
+      # change — see docs/02_TECH_SPEC.md §4.
+      - name: Build static export
+        run: npm run build
+        env:
+          # Required: Pages serves project sites from /<repo>/, not the root.
+          # See the comment in next.config.ts. Remove this when moving to a
+          # custom domain.
+          NEXT_PUBLIC_BASE_PATH: /mdaas
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
