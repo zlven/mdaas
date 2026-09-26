@@ -12,6 +12,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Build output, never edited by hand — see CLAUDE.md "Sources vs build
+    // artefacts".
+    //
+    // This was implicit until uploads arrived: `public/` held only JSON, which
+    // nothing lints. It now also holds the pdf.js worker copied there by
+    // `scripts/build-assets.mts`, and linting a 1.2 MB minified vendor bundle
+    // produced 1,573 warnings that buried every real one.
+    "public/**",
+    "lib/generated/**",
   ]),
 ]);
 

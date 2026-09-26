@@ -192,18 +192,22 @@ Three zones.
 ┌──────────────────────────────────────────────────────────────┐
 │ ← 返回      💼 AI 全能办公专家          [设置]  [清空对话]     │
 ├────────────┬────────────────────────────────┬────────────────┤
-│            │ ▸ 我的档案 · 已填 3 项          │   能力          │
-│  Agent     │ ▸ 工具 · 会议成本               │   ────         │
-│  identity  │ ──────────────────────────────  │   知识库        │
-│            │   ┌──────────────────────┐     │   工具          │
-│  icon      │   │ user message         │     │   工作流        │
-│  description│  └──────────────────────┘     │                │
+│            │ [会议成本] [口播时长]           │   能力          │
+│  Agent     │ ┌────────────────────────────┐ │   ────         │
+│  identity  │ │ 按人数、时长和平均时薪，算出 │ │   知识库        │
+│            │ │ 这场会实际花掉多少钱。       │ │   工具          │
+│  icon      │ │ ────────────────────────── │ │   工作流        │
+│  description│ └────────────────────────────┘ │   ────         │
+│            │   ┌──────────────────────┐     │   我的档案       │
+│  tags      │   │ user message         │     │   身高(cm)      │
+│            │   └──────────────────────┘     │   [ 175      ]  │
+│            │   ┌──────────────────────┐     │   补充说明       │
+│            │   │ assistant message    │     │   [          ]  │
+│            │   │ (streaming)          │     │   [ 清空档案 ]  │
+│            │   └──────────────────────┘     │   ────         │
 │            │                                │   本次检索       │
-│  tags      │   ┌──────────────────────┐     │                │
-│            │   │ assistant message    │     │   ────         │
-│            │   │ (streaming)          │     │   · chunk 1    │
-│            │   └──────────────────────┘     │   · chunk 2    │
-│            │                                │                │
+│            │                                │   · chunk 1    │
+│            │                                │   · chunk 2    │
 ├────────────┴────────────────────────────────┴────────────────┤
 │ [📎 附件] [⚡ 工作流]                              [ 发送 → ] │
 └──────────────────────────────────────────────────────────────┘
@@ -213,35 +217,72 @@ Three zones.
 |---|---|---|
 | Left rail | 240px | Icon, names, description, capability tags |
 | Centre | flexible | Conversation, max-width ~720px, centred |
-| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **and what was retrieved this turn** |
+| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **the profile**, and what was retrieved this turn |
 
 Both rails collapse below `lg`. The **centre column never exceeds ~720px** — full-width prose on a 1440px monitor is unreadable.
 
-### The profile and tools strips
+### The tools strip — centre column
 
-Above the conversation, in the centre column:
+Above the conversation, in the centre column. **One line, however many tools the agent declares:**
 
 ```
 ┌──────────────────────────────────────────────┐
-│ ⌄  我的档案 · 已填 3 项                       │
+│ [ 会议成本 ] [ 口播时长 ] [ 食物热效应 ]       │
 └──────────────────────────────────────────────┘
-┌──────────────────────────────────────────────┐
-│ ⌄  会议成本                                   │
-│    按人数、时长和平均时薪，算出这场会花掉多少钱。│
+┌──────────────────────────────────────────────┐ ← selected tool's panel
+│ 按人数、时长和平均时薪，算出这场会花掉多少钱。 │ ← Small, --ink-muted
+│ ──────────────────────────────────────────── │
+│ 参会人数（人） 会议时长（分钟） 平均时薪（元） │
 └──────────────────────────────────────────────┘
 ```
 
-- Each is a `<details>` collapsed by default — the same interaction as the retrieved-context panel, which makes keyboard operation free.
-- **They take the same treatment as the suggested-prompt buttons** below them: `--surface` fill, 1px `--line`, hover to `--line-strong`. That is already what this page looks like when something is clickable, so the strips are not inventing a style — they were the one control on the screen that did not wear it.
-- **A collapsed row must look like a control, and this is a requirement rather than decoration.** The native `<summary>` marker is browser-inconsistent, so it is hidden — but hiding it *without* drawing a replacement leaves a line of grey text with no affordance at all. That failure is invisible on a desktop pointer (`cursor: pointer` is the only remaining hint) and total on a touch screen, which has no cursor. Every collapsed row therefore carries a drawn chevron that rotates 180° on open, a `--surface` fill inside a 1px `--line` border, and a hover state that darkens the border to `--line-strong`. All four live in `components/ui/Disclosure.tsx` so the four collapsed rows in the workspace — the two strips, the hits section and each chunk inside it — cannot drift apart. The chevron sits **left of the text**, aligned to the first line, because the tool rows are two lines and a centred icon would float into the gap between them.
+- **The selector is a row of `<button>`s, not `<details>`.** One disclosure per tool cannot scale: at two lines each, three tools is six lines of the centre column spent before the conversation starts. The chips are one line total at any count.
+- **They take the treatment of the suggested-prompt buttons** below them — `--surface` fill, 1px `--line` — one size down (`--micro` type, tighter padding). That is already what this page looks like when something is clickable, so the chips are not inventing a style.
+- **No chevron is needed here, and that is not an exception to the rule below.** The chevron exists because `list-none` leaves a `<summary>` looking like a static label. A bordered button already reads as a control, so the affordance is inherent.
+- The selected chip carries the pressed treatment (`--line-strong` border, `--surface-alt` fill) and `aria-expanded`. **Clicking the open chip closes it, and nothing is open by default** — a panel that is open on arrival spends the line height the chip row was built to save.
+- **Every chip's `aria-controls` points at the same container**, which is rendered whether or not anything is open. Pointing each chip at its own panel would mean a chip whose panel has not been mounted yet referencing an id that is not in the document. Inside that container each tool's panel is a `role="region"` labelled with its own name, so the region a screen reader lands in is still named for the tool.
+- **The description moves into the panel**, at the top, in `--small` `--ink-muted` per §269. This is a deliberate trade against the older rule that the tool row itself must be two lines (name + one line saying what it does): a one-line chip row cannot carry both, and the description is still the first thing inside, before any input. It works because tool names are self-describing nouns (会议成本, 口播时长), the right rail lists the same names as part of describing the agent, and a tool that is open is a tool the user already chose.
+- **A tool that has been opened stays mounted.** Switching chips hides the previous panel with the `hidden` attribute rather than unmounting it, because a tool's inputs are component state, not stored state — unmounting would discard a half-filled 会议成本 the moment the user glanced at another tool. This is the same latch the previous per-tool `<details>` had.
+
+### The profile — right rail
+
+Not a strip, and not in the centre column:
+
+```
+│   ────                                         │
+│   我的档案 · 已填 3 项                          │
+│   身高（cm）                                    │
+│   [ 175        ]                               │
+│   主要目标                                      │
+│   [ 减脂     ▾ ]                               │
+│   补充说明                                      │
+│   [ 膝盖有旧伤，每周只能练三次            ]     │
+│   [ 清空档案 ]                                 │
+```
+
+- **It is not collapsed.** Every other rail section (能力, 知识库, 工具, 工作流) is permanently open, and one accordion among them reads as a different kind of thing. The rail's idiom is a small heading with content under it, and the profile adopts it. The status (已填 3 项) goes on the heading line.
+- **Why it is no longer in the centre column.** It is not an operation — it is standing facts about the user, which is what the rest of the rail already holds. The tools are operations and they hold drafts, so they must exist exactly once and the centre column is the only zone present at every breakpoint. The profile holds no draft: every input is controlled straight from the store's snapshot, so it is safe to exist twice. See the mounting rule below.
+- **Below `lg` the rail is gone, so the profile falls back to a collapsed strip in the centre column.** Otherwise I9 (viewable, editable, deletable) would hold on a desktop and fail on a phone. This is the same duplication `RetrievalPanel` uses, and it costs one thing that must not be forgotten: **the two instances must not share element ids**, or the `<label for>` resolves to whichever is earlier in the DOM — the hidden one. `components/agent/ProfilePanel.tsx` therefore takes an `idPrefix` and both call sites pass a distinct one.
+- **Loading is not empty.** While the profile is being read it says 读取中. Rendering the empty state first and filling it in a frame later tells the user their data is gone.
+- The form reuses §8's field styling and carries a two-step 清空档案 confirmation. Its footer states that the profile is stored in this browser, does not sync across devices, and may be overwritten when several tabs are open.
+- When the browser refuses storage, a **neutral**-coloured notice appears — not `--danger`. The user has done nothing wrong, and a permanently-red banner teaches people to ignore red.
+- **补充说明 is a plain `<textarea>`, and it is the one profile control that is not a config field.** Every other field is declared by the agent and rendered as a form; this one is a free-text block every agent gets, under a label we author (`04_AGENT_SPEC.md` §6). It is multi-line by design, which is why its writes do not go through the same path as a declared field — see the note in `lib/store/memory.ts`.
+- When the profile is empty and there is no conversation yet, the empty state gains one line above the suggested prompts inviting the user to fill it in. This is the product's onboarding moment, not chrome. That line stays in the **centre column**, because it is about the absence of a conversation rather than part of the form.
+
+### Collapsed rows
+
+The rule below governs every `<details>` in the workspace — the retrieved-context section, each chunk inside it, and the profile strip below `lg`. It is not decoration, and it is what `components/ui/Disclosure.tsx` exists to enforce:
+
+- **A collapsed row must look like a control.** The native `<summary>` marker is browser-inconsistent, so it is hidden — but hiding it *without* drawing a replacement leaves a line of grey text with no affordance at all. That failure is invisible on a desktop pointer (`cursor: pointer` is the only remaining hint) and total on a touch screen, which has no cursor. Every collapsed row therefore carries a drawn chevron that rotates 180° on open, a `--surface` fill inside a 1px `--line` border, and a hover state that darkens the border to `--line-strong`. The chevron sits **left of the text**, aligned to the first line.
 - A row inside another row (a chunk inside the hits section) takes the same chevron without the border. A second bordered box within a bordered box reads as a mistake.
-- **The tool row is two lines: the name, then one line saying what the tool does.** A tool hidden behind an unmarked click is a tool nobody opens, and the name alone does not say what opening it would get you. The profile row stays one line because its second half is a *status* (已填 3 项), not a promise.
-- **Centre column, not the right rail.** The rail describes the agent; these are things the user operates. The rail goes on listing tool *names* as description.
-- **Mounted exactly once.** They hold input state, and the narrow-screen adaptation *duplicates* the rail rather than moving it, so a component with drafts mounted twice has two independent drafts — typing on a narrow viewport and then widening the window would silently discard the input. The centre column is the only zone present at every breakpoint, so it is the only correct home.
-- **Loading is not empty.** While the profile is being read the strip says 读取中. Rendering the empty state first and filling it in a frame later tells the user their data is gone.
-- The profile form reuses §8's field styling and carries a two-step 清空档案 confirmation. Its footer states that the profile is stored in this browser, does not sync across devices, and may be overwritten when several tabs are open.
-- When the browser refuses storage, a **neutral**-coloured notice appears inside the strip — not `--danger`. The user has done nothing wrong, and a permanently-red banner teaches people to ignore red.
-- When the profile is empty and there is no conversation yet, the empty state gains one line above the suggested prompts inviting the user to fill it in. This is the product's onboarding moment, not chrome.
+- Each is collapsed by default — the same interaction as the retrieved-context panel, which makes keyboard operation free.
+
+### Mounting, and where a component may be duplicated
+
+The narrow-screen adaptation in this layout *duplicates* below `lg` rather than moving: both copies are in the DOM, one hidden by `display: none`. Whether that is safe is a property of the component, not of the layout:
+
+- **A component holding a draft must exist exactly once.** Two copies are two independent drafts, and typing into the visible one and then widening the window past `lg` silently discards what was typed. The tools are in this class (their inputs are `useState`) and so is `ChatInput`.
+- **A component whose inputs are controlled from a store snapshot may be duplicated**, provided its element ids carry an instance prefix. The profile is in this class: it renders `value` straight from `lib/store/memory.ts` and keeps no draft of its own, so both copies read the same source. It still has to set `idPrefix`, because duplicate ids would break `<label for>`. `RetrievalPanel` is duplicated for the same reason and needs no prefix, holding no controls at all.
 
 ### The expanded tool
 
@@ -304,8 +345,44 @@ Prominent, and it grows with content up to about six lines.
 - Placeholder is a concrete invitation, never "请输入内容".
 - Attachment and workflow controls sit **inside** the input container, below the textarea.
 - Enter sends; Shift+Enter newlines. On mobile, Enter newlines and Send is a button.
+- **Send is enabled by a ready attachment alone.** 「把这个文件看一下」 is an ordinary thing to want, and a user who has handed over a document and watches Send stay grey reads it as the product refusing the file. So an empty box with at least one `ready` chip sends. Two things follow, and both are decisions rather than details:
+  - **The turn says `（见附件）`.** A user turn cannot be empty — the bubble would render as a blank box, and the model would be asked to answer with no question in front of it. So the message carries a placeholder, and this is the one place in the product where a user turn contains words the user did not type. It is honest about what happened, and the file's own head is in the prompt regardless: injection is not retrieval, so the model reads the document whether or not the placeholder matches it (`02_TECH_SPEC.md` §8.7).
+  - **A chip that is still parsing, or that failed, does not enable it.** There is nothing sendable yet in the first case and nothing to send in the second, so the button enabling itself would be a lie in both.
+- The gate is **one predicate**, shared by the button's `disabled` and by Enter, so the two cannot disagree about whether there is something to send.
 - Disabled state (no key configured) keeps the input visible and replaces the placeholder with a prompt to configure a provider, plus a link. **Do not hide the input** — hiding it makes the product look broken.
 - Attachment chips render above the textarea with a remove control and the parsed-character count. Character count, not file size — what matters is whether it fit.
+
+### Attachments
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  📄 会议纪要.pdf · 8,412 字符                            ✕   │
+│  📄 预算表.md · 31,208 字符（前 24,000 已读入，其余可检索） ✕ │
+│  📄 扫描件.pdf · 没有可提取的文字，可能是扫描件           ✕   │
+│                                                              │
+│  想让这位专家做什么？                                          │
+│                                                              │
+│  [📎 附件]  文件只在你的浏览器里解析，不会上传。    [ 发送 → ] │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- The attach control sits in the control row, to the left of the Send button. It is a button plus a visually hidden `<input type="file" multiple>`; the button is the focus target, so the hidden input never needs to be.
+- **Attaching is not gated on having a key.** Files can be prepared before a provider is configured, and become sendable the moment one is.
+- Chips are a list of things, so they are a `<ul>` of `<li>`. Each remove control is a real `<button>` with a Chinese `aria-label` naming the file (§11, J4).
+- Chip states, and the only place `--danger` is allowed here — a genuine per-file status, never decoration:
+
+  | State | Copy |
+  |---|---|
+  | parsing | `文件名 · 读取中…` |
+  | ready, fits | `文件名 · 8,412 字符` |
+  | ready, truncated | `文件名 · 31,208 字符（前 24,000 已读入，其余可检索）` |
+  | failed | `文件名 · <the reason>` in `--danger` |
+
+- **A refusal is shown on the chip, not in a dialog and not in the conversation's error card.** The failure belongs to one file, and two files can fail for two different reasons in the same turn. A failed chip keeps its remove control so the reason stays readable until the user clears it.
+- The refusal for an oversized file happens against the declared size, before anything is read, so it is immediate even for a very large file.
+- **The privacy line is required, not optional** (`01_PRD.md` §6). It occupies the same row as the no-key hint and replaces it once a key exists: `文件只在你的浏览器里解析，不会上传。`
+- Uploads persist across turns for the whole session — that is what makes a follow-up question about the same document work — and are dropped when a new conversation is started.
+- Drag-and-drop is deliberately **not** specified. It is not in `01_PRD.md` §6's scope, and anything outside the in-scope list is a defect (`01_PRD.md` §2).
 
 ---
 

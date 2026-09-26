@@ -44,7 +44,7 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | 9 | Per-agent safety policies, at minimum `health-edu` on `fitness` |
 | 10 | AI identity transparency |
 | 11 | Error and empty states throughout |
-| 12 | Per-agent profile — structured fields the user declares, stored in this browser (`04_AGENT_SPEC.md` §6) |
+| 12 | Per-agent profile — structured fields the **config** declares, plus one free-text 补充说明 the user writes, stored in this browser (`04_AGENT_SPEC.md` §6) |
 | 13 | Per-agent instant tools — small client-side utilities usable without a conversation (`04_AGENT_SPEC.md` §7) |
 
 ### Explicitly out of scope
@@ -98,14 +98,16 @@ Filters are **not** in the MVP — ten cards fit on one screen.
 ┌────────────────────────────────────────────────────────────┐
 │ ← Back        💼 Office Expert          [Settings] [Clear] │
 ├──────────────┬──────────────────────────────┬──────────────┤
-│              │ ▸ 我的档案 · 已填 3 项        │ Capabilities │
-│  Agent       │ ▸ 工具 · 会议成本             │              │
-│  identity    │                              │ Knowledge    │
-│              │      Conversation            │ Tools        │
-│  description │                              │ Workflow     │
-│              │                              │              │
-│  tags        │                              │  本次检索     │
-│              │                              │              │
+│              │ [会议成本] [口播时长]          │ Capabilities │
+│  Agent       │ ┌──────────────────────────┐ │              │
+│  identity    │ │ 按人数、时长和平均时薪…    │ │ Knowledge    │
+│              │ │ ──────────────────────── │ │ Tools        │
+│  description │ └──────────────────────────┘ │ Workflow     │
+│              │                              │ ──────────── │
+│  tags        │      Conversation            │ 我的档案      │
+│              │                              │ 身高(cm)[175]│
+│              │                              │ ──────────── │
+│              │                              │  本次检索     │
 ├──────────────┴──────────────────────────────┴──────────────┤
 │ [📎 Attach] [⚡ Workflow]                     [Send →]      │
 └────────────────────────────────────────────────────────────┘
@@ -113,7 +115,12 @@ Filters are **not** in the MVP — ten cards fit on one screen.
 
 Right rail collapses below `lg`. Below `md`, chat takes the full viewport and the agent identity moves into the header.
 
-**The profile and tools strips sit at the top of the centre column, not in the right rail.** The right rail *describes* the agent — what it can do, what it knows, which tools it has. The profile and the tools are things the user *operates*, and an operable control belongs where the work happens. They also hold input state, so each must exist exactly once in the DOM, and the centre column is the only zone present at every breakpoint. Both collapse to a single line and are closed by default.
+**The tools strip sits at the top of the centre column; the profile sits in the right rail.** The two are not the same kind of thing, which is why they no longer share a position:
+
+- The **tools** are operations, and an operation belongs where the work happens. They also hold *drafts* — a half-filled 会议成本 is component state, not stored state — so they must exist exactly once in the DOM, and the centre column is the only zone present at every breakpoint.
+- The **profile** is not an operation. It is standing facts about the user, alongside what the agent can do and what it knows — all of which describe this conversation's context and none of which the user operates. It is stored state read straight from the store, with no draft, so it *can* exist twice; below `lg`, where the rail is gone, it falls back to a collapsed strip in the centre column so it stays reachable at every width (`03_UI_UX_SPEC.md` §5).
+
+The tools strip is one line tall however many tools an agent declares; the selected tool's panel opens below it.
 
 Opening a `Coming Soon` agent's URL directly must render the agent's description with a clear "not available yet" state and **no input box**.
 
@@ -177,11 +184,14 @@ Multi-turn context within a session. Cross-session conversation history in `Inde
 
 Requirements:
 
+- Accepted formats are `.pdf`, `.docx`, `.txt`, `.md`. Anything else is refused by name.
 - Parsing happens **in the browser**. The file is never uploaded anywhere. State this in the UI — it is a real privacy property and it is worth a line of copy.
-- Size ceiling ~10 MB, enforced client-side with a readable error.
-- Parsed text is chunked (§ `02_TECH_SPEC.md` §8.7) and added to the **session's** retrieval pool.
+- Size ceiling 10 MiB, enforced client-side against the file's declared size **before it is read**, with a readable error.
+- Parsed text is injected into the prompt **in full** up to the inline budget, and only the remainder is chunked ( § `02_TECH_SPEC.md` §8.7) into the **session's** retrieval pool. Injection rather than retrieval-only is required by §8.3's "single structured call over an uploaded transcript" and by F5 — see §8.7 for why.
+- When a file is longer than the budget, both the user and the model are told how much was read in. The agent must never present a partial read as a complete one.
 - Uploaded content is attributed to its filename in the prompt.
 - A parsing failure names the file and the reason. It never fails silently.
+- An attached file is a complete message on its own: with a ready file in the box, Send works even if the user typed nothing, and the turn is sent as 「（见附件）」. Requiring a sentence would make handing over a document and asking 「看看这个」 two steps instead of one.
 - Files are not persisted to the knowledge base.
 
 ---

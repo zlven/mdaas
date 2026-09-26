@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { AgentFacts } from "@/components/agent/AgentRails";
-import { ProfilePanel } from "@/components/agent/ProfilePanel";
+import { ProfileNudge, ProfilePanel } from "@/components/agent/ProfilePanel";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Markdown } from "@/components/chat/Markdown";
 import { RetrievalPanel } from "@/components/chat/RetrievalPanel";
@@ -12,10 +12,12 @@ import { ToolPanel } from "@/components/tools/ToolPanel";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { profileEntries } from "@/lib/agents/profile";
 import type { AgentConfig } from "@/lib/agents/types";
+import { prepareUpload } from "@/lib/files/parse";
+import type { Upload } from "@/lib/files/types";
 import { appError, isAppError, type AppError } from "@/lib/llm/errors";
 import { stream } from "@/lib/llm/gateway";
 import type { ChatMessage, Credentials } from "@/lib/llm/types";
-import type { RetrievedChunk } from "@/lib/rag/bm25";
+import { buildIndex, search, type RetrievedChunk } from "@/lib/rag/bm25";
 import { composeSystemPrompt } from "@/lib/rag/context";
 import { loadAgentRetriever } from "@/lib/rag/retriever";
 import { profileSnapshot } from "@/lib/store/memory";
@@ -34,6 +36,27 @@ import { isConfigured, settingsSnapshot, subscribeSettings } from "@/lib/store/s
  * The chain is explicit and in one place, because it is the product:
  *   load the agent's retriever → retrieve for this message → format the block →
  *   append it to the agent's system prompt → stream the answer.
+ *
+ * **Uploads join that block, and they are not retrieval.** §8.7 — the head of
+ * every attached file is injected verbatim, so it reaches the model whether or
+ * not it matches the question; only the overflow past the inline budget is
+ * searched. A retrieval-only design cannot satisfy `prompts/*.md`'s 「先说明你读到
+ * 了什么」 — an agent cannot describe a document it was never shown.
+ *
+ * Three consequences that are easy to get wrong and are therefore stated here:
+ *
+ *   1. **Uploads are not gated on the agent having a knowledge base.** Seven of
+ *      the ten agents have none, and every one of them can read a file the user
+ *      hands it. The `agent.knowledgeBase !== null` check below guards the
+ *      retriever only.
+ *   2. **The two pools are searched separately.** Upload chunks get their own
+ *      index so their scores are not normalised against knowledge chunks' — a
+ *      shared index would let a long knowledge corpus push every upload hit below
+ *      the score floor at `SCORE_FLOOR_RATIO`.
+ *   3. **The upload pool is capped by the budget, not by a count.** §8.7 sets a
+ *      per-file inline budget; a file over it contributes its overflow, and
+ *      `CONTEXT_TOO_LONG`'s remedy (「去掉一个附件」) is the answer to a prompt that
+ *      gets too long, so there is no second global cap here.
  */
 
 interface RetrievalState {
@@ -72,8 +95,17 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<AppError | null>(null);
   const [retrieval, setRetrieval] = useState<RetrievalState>(NO_RETRIEVAL);
+  const [uploads, setUploads] = useState<Upload[]>([]);
 
   const abort = useRef<AbortController | null>(null);
+
+  /**
+   * Source of `Upload.key`, and therefore of every chunk id this file will
+   * produce. Monotonic rather than derived from the filename, because the same
+   * file can be attached, removed and attached again — and two attachments of
+   * `纪要.pdf` must not share ids in the retrieval index or in React's keys.
+   */
+  const uploadSeq = useRef(0);
 
   // An unmount mid-stream would otherwise leave the fetch running against a
   // component that no longer exists.
@@ -97,8 +129,27 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
 
       setError(null);
       setStatus("streaming");
-      setRetrieval(agent.knowledgeBase === null ? NO_RETRIEVAL : { hits: [], error: null, pending: true });
       setMessages([...base, { role: "assistant", content: "" }]);
+
+      // --- Reference material ------------------------------------------------
+      // Built before the request and shown before it resolves: every part of this
+      // is already known, so leaving the rail empty while the knowledge index is
+      // in flight would hide material the user just handed over.
+      const injected: RetrievedChunk[] = uploads.flatMap((upload) =>
+        upload.status.kind === "ready" ? [{ chunk: upload.status.document, score: 0 }] : [],
+      );
+
+      const tails = uploads.flatMap((upload) => (upload.status.kind === "ready" ? upload.status.tail : []));
+      // Synchronous, and over the session's own attachments — no fetch, no
+      // failure mode. `score: 0` above marks the injected head as something other
+      // than a match; these carry a real score and are ordered after it.
+      const overflow = tails.length > 0 ? search(buildIndex(tails), prompt) : [];
+
+      setRetrieval({
+        hits: [...injected, ...overflow],
+        error: null,
+        pending: agent.knowledgeBase !== null,
+      });
 
       // --- Standing context: the user's profile ------------------------------
       // Read at send time rather than held in state. The store is synchronous, so
@@ -107,26 +158,31 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       const snapshot = profileSnapshot(agent.id);
       const profile = snapshot.status === "loading" ? [] : profileEntries(agent.profile, snapshot.fields);
 
-      // --- Reference material ------------------------------------------------
-      let hits: RetrievedChunk[] = [];
+      let knowledgeHits: RetrievedChunk[] = [];
+      let retrievalError: AppError | null = null;
 
       if (agent.knowledgeBase !== null) {
         try {
           const retriever = await loadAgentRetriever(agent.id);
-          hits = retriever.retrieve(prompt);
-          setRetrieval({ hits, error: null, pending: false });
+          knowledgeHits = retriever.retrieve(prompt);
         } catch (err) {
-          setRetrieval({
-            hits: [],
-            error: isAppError(err)
-              ? err
-              : appError("RETRIEVAL_FAILED", err instanceof Error ? err.message : String(err)),
-            pending: false,
-          });
+          // Recorded, not published here. The uploads survive a knowledge-base
+          // failure — their own failure mode is per-file and already on the chip
+          // — so the panel has to show the error *and* the file the answer was
+          // built from, which means one `setRetrieval` carrying both.
+          retrievalError = isAppError(err)
+            ? err
+            : appError("RETRIEVAL_FAILED", err instanceof Error ? err.message : String(err));
         }
       }
 
-      // Composed from both, after retrieval has settled, so a knowledge-base
+      // Uploads first, then their overflow, then the knowledge base: the file the
+      // user handed over this turn outranks background corpus material, and
+      // `formatContext` numbers in array order.
+      const hits = [...injected, ...overflow, ...knowledgeHits];
+      setRetrieval({ hits, error: retrievalError, pending: false });
+
+      // Composed from all of it, after retrieval has settled, so a knowledge-base
       // failure costs the turn its reference material and nothing else. Building
       // the prompt inside the `try` above would drop the profile on a retrieval
       // error, and the user would read that as the agent having ignored it.
@@ -172,8 +228,47 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       // the user message underneath.
       if (answer === "") setMessages(base);
     },
-    [agent, settings],
+    [agent, settings, uploads],
   );
+
+  /**
+   * Accepts files from the picker and prepares them one at a time.
+   *
+   * **Sequential on purpose.** PDF and DOCX parsing both run JavaScript on the
+   * main thread — the pdf.js worker is not a thread of its own for the caller,
+   * and mammoth has no worker at all — so starting three parses at once would
+   * freeze the tab for the sum of them with no chip yet on screen to explain why.
+   * One at a time means the first chip goes live while the second file is still
+   * being read.
+   *
+   * The chip is appended as `parsing` **before** the work starts, because a 10
+   * MiB PDF takes long enough that a chip appearing only on completion reads as
+   * a click that did nothing.
+   */
+  const attach = useCallback(
+    (files: File[]) => {
+      void (async () => {
+        for (const file of files) {
+          const key = `u${uploadSeq.current++}`;
+          setUploads((previous) => [
+            ...previous,
+            { key, name: file.name, size: file.size, status: { kind: "parsing" } },
+          ]);
+
+          // Never rejects: every failure path in `prepareUpload` resolves to a
+          // `failed` status carrying an `AppError`, which is what puts the reason
+          // on the chip instead of in the conversation's error card.
+          const upload = await prepareUpload(file, agent.id, key);
+          setUploads((previous) => previous.map((entry) => (entry.key === key ? upload : entry)));
+        }
+      })();
+    },
+    [agent.id],
+  );
+
+  const removeUpload = useCallback((key: string) => {
+    setUploads((previous) => previous.filter((entry) => entry.key !== key));
+  }, []);
 
   const send = useCallback(
     (text: string) => {
@@ -200,11 +295,17 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
     }
   }, [messages, run]);
 
+  /**
+   * A new conversation, which per §8.7 also drops the attachments: they belong to
+   * the session, not to the agent, and carrying them into a fresh thread would
+   * make 「清空对话」 a lie about what is still in the prompt.
+   */
   const clear = useCallback(() => {
     abort.current?.abort();
     setMessages([]);
     setError(null);
     setRetrieval(NO_RETRIEVAL);
+    setUploads([]);
   }, []);
 
   const panel = <RetrievalPanel hits={retrieval.hits} error={retrieval.error} pending={retrieval.pending} />;
@@ -239,19 +340,31 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
             ) : null}
           </div>
 
-          {/* The profile and the tools, one line each, mounted **once** — the
-              centre column is the only position present at every breakpoint. See
-              the note in components/tools/ToolPanel.tsx; the `lg:hidden` copy
-              further down is safe only because the retrieval panel is stateless.
-              `send` is passed rather than a bare setter so a tool's result enters
-              the conversation as an ordinary user turn, with retrieval and history
-              behaving exactly as if it had been typed. */}
-          <ProfilePanel agent={agent} nudge={messages.length === 0} />
+          {/* Below `lg` the rail is gone, so the profile is repeated here as a
+              collapsed strip — the same duplication the retrieval panel uses
+              two blocks down, and for the same reason: a control that vanishes
+              on a phone is worse than a duplicated one. It is safe only because
+              the form keeps no draft of its own, and only if the two copies do
+              not share element ids, which is what `idPrefix` is for. See the
+              note in components/agent/ProfilePanel.tsx — the tools below could
+              not be treated this way.
+
+              `send` is passed rather than a bare setter so a tool's result
+              enters the conversation as an ordinary user turn, with retrieval
+              and history behaving exactly as if it had been typed. */}
+          <div className="lg:hidden">
+            <ProfilePanel agent={agent} variant="strip" idPrefix="strip" />
+          </div>
+
           <ToolPanel tools={agent.tools} onSend={send} ready={ready} busy={status === "streaming"} />
 
           <div className="min-h-[40vh]">
             {messages.length === 0 ? (
               <div>
+                {/* The onboarding line. It lives here rather than inside the
+                    profile form because it is about there being no
+                    conversation yet, and the form is now in the rail. */}
+                <ProfileNudge agent={agent} />
                 <p className="text-ink-muted">还没有对话。试试下面这些任务</p>
                 <ul className="mt-4 flex flex-wrap gap-2">
                   {agent.suggestedPrompts.map((prompt) => (
@@ -332,7 +445,15 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
           <div className="lg:hidden">{panel}</div>
 
           <div className="sticky bottom-0 bg-bg pb-6 pt-2">
-            <ChatInput ready={ready} streaming={status === "streaming"} onSend={send} onStop={stop} />
+            <ChatInput
+              ready={ready}
+              streaming={status === "streaming"}
+              uploads={uploads}
+              onSend={send}
+              onStop={stop}
+              onAttach={attach}
+              onRemoveUpload={removeUpload}
+            />
           </div>
         </div>
       </div>
@@ -340,7 +461,11 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       {/* The right rail is rendered from here rather than by the page because its
           「本次检索」 section is per-turn state this component owns. `AgentIdentity`
           stays with the page, which needs no state for it. */}
-      <AgentFacts agent={agent} retrieval={panel} />
+      <AgentFacts
+        agent={agent}
+        retrieval={panel}
+        profile={<ProfilePanel agent={agent} variant="rail" idPrefix="rail" />}
+      />
     </>
   );
 }

@@ -69,7 +69,20 @@ npm run build          # static export
 npm run build:assets   # rebuild knowledge + prompts only
 npm run typecheck
 npm run lint
+npm run verify:upload  # the pure half of the upload + prompt-injection checks
 ```
+
+`verify:upload` runs the Node-checkable assertions from `docs/06_ACCEPTANCE.md`
+§E and the profile ones from I12. Everything it asserts is a pure function; what
+needs a browser is listed at the end of `docs/06_ACCEPTANCE.md` §E.
+
+**When you add an assertion there, delete the thing it guards and confirm it goes
+red** — and that it goes red *on that assertion*, since an import error is also
+red. A check that cannot fail is worse than no check: it reads as coverage. The
+two times this has happened here were both silent — a `putCount` that a *failed*
+write also leaves unchanged, and a clause check whose marker string already
+appeared elsewhere in every prompt, so `String.includes` passed it
+unconditionally.
 
 ---
 

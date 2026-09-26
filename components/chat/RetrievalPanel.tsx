@@ -17,6 +17,12 @@ import type { RetrievedChunk } from "@/lib/rag/bm25";
  *
  * Collapsed by default. A user who wants the answer should not have to scroll
  * past the evidence to reach it.
+ *
+ * `hits` is the whole reference block, not only what the retriever matched: an
+ * attached file's injected text is in there too (§8.7), and its row is
+ * distinguishable by its `source`, which is the filename. The heading stays
+ * 「本次检索」 because that is what §5 names the section, and the count in the
+ * summary is honest about being everything the model was given.
  */
 
 function ChunkRow({ hit, index }: { hit: RetrievedChunk; index: number }) {
@@ -64,22 +70,33 @@ export function RetrievalPanel({
         本次检索
       </h3>
 
-      {/* The three branches below read the same whichever way this resolves.
-          Note that the hits branch used to keep `summary`'s native triangle
-          while every chunk row under it had theirs hidden — the same control
-          behaving two ways on one screen, which is the drift `Disclosure`
-          exists to stop. */}
-      <div className="mt-1 text-small text-ink-muted">
+      {/* These are four independent statements, not four branches of one.
+          They used to be a chain, which was correct while every source of hits
+          shared a single fate — an upload does not. A failed knowledge index
+          leaves the attached file's text in the prompt, and a query that matches
+          nothing in the corpus still carries the file the user handed over. A
+          chain would have shown the error and silently hidden the material the
+          answer was actually built from.
+
+          The `hits` branch also used to keep `summary`'s native triangle while
+          every chunk row under it had theirs hidden — the same control behaving
+          two ways on one screen, which is the drift `Disclosure` exists to stop. */}
+      <div className="mt-1 space-y-1 text-small text-ink-muted">
         {error ? (
           // RETRIEVAL_FAILED is not fatal: the answer continues from general
           // knowledge and says so (§8.8). Saying that here keeps the panel from
           // reading as an outage.
           <p>{error.message}</p>
-        ) : pending ? (
-          <p>正在检索这位专家的知识库…</p>
-        ) : hits.length === 0 ? (
-          <p>这次没有命中知识库里的内容。</p>
-        ) : (
+        ) : null}
+
+        {pending ? <p>正在检索这位专家的知识库…</p> : null}
+
+        {!pending && hits.length === 0 ? <p>这次没有命中知识库里的内容。</p> : null}
+
+        {hits.length > 0 ? (
+          // Counts the attached files' injected text as well as retrieved chunks
+          // — both are in the prompt's reference block, and the rows below name
+          // where each came from (`hit.chunk.source`).
           <Disclosure tone="plain" summary={`命中 ${hits.length} 段，展开看看`}>
             <ul className="space-y-2">
               {hits.map((hit, index) => (
@@ -87,7 +104,7 @@ export function RetrievalPanel({
               ))}
             </ul>
           </Disclosure>
-        )}
+        ) : null}
       </div>
     </section>
   );

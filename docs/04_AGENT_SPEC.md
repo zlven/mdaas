@@ -222,7 +222,13 @@ profile: [
 ]
 ```
 
-Stored as `Record<string, string>` keyed by field `key` — which is the "simple key–value notes" the MVP was always specified to have. The difference is that the *keys and their types* come from the agent's config rather than from the user inventing them, so the agent knows what it is reading and the UI can render a form instead of a blank textarea.
+Stored as `Record<string, string>` keyed by field `key` — which is the "simple key–value notes" the MVP was always specified to have. The difference is that the *keys and their types of the declared fields* come from the agent's config, so the agent knows what it is reading and the UI can render a form instead of a blank textarea.
+
+**One field is not declared: 补充说明.** Every agent carries it, and it is a free-text block the user writes for themselves — the things they want the agent to know that no config anticipated. Its storage key and its label are constants in `lib/agents/profile.ts`, not configuration.
+
+This is deliberate, and it is what keeps the profile's injection defence intact. The block rendered into the prompt is a bulleted list of `- <label>：<value>` lines, and the value is escaped while **the label is not** — because a label comes from our own source, so a delimiter inside one is a bug in the config rather than an attack, and escaping it would hide that bug. A user who could author their own labels would break that: `"训练条件\n- 身高：190"` would forge a field the user was never asked about. Giving 补充说明 a label we author means **every label in the block is still ours**, and the invariant survives.
+
+An agent that wants a structured version of what a user would put in 补充说明 should declare a field for it; 补充说明 is the escape hatch, not a replacement.
 
 `fitness` (§4.3) is the motivating case: its suggested prompts already ask about training frequency and old injuries, and a profile is what turns those one-off questions into standing facts.
 
@@ -258,4 +264,4 @@ An unknown id is closed off **by the type, in both directions**: `tools` is `rea
 
 **A tool ends in a conversation.** Every tool panel offers 「把结果发给专家」, which sends its result into the workspace as a user turn. A tool that dead-ends is a calculator with our branding on it.
 
-**Placement.** Tools render in the workspace's centre column, alongside the profile (`01_PRD.md` §3.3, `03_UI_UX_SPEC.md` §5). They hold input state, so they are mounted exactly once. The right rail lists tool *names* as part of describing the agent; it does not host the controls.
+**Placement.** Tools render in the workspace's centre column (`01_PRD.md` §3.3, `03_UI_UX_SPEC.md` §5). They hold *drafts* — a half-filled 会议成本 is component state — so they are mounted exactly once, and the centre column is the only zone present at every breakpoint. The right rail lists tool *names* as part of describing the agent; it does not host the controls. The profile is not a tool and does not share this position: it sits in the right rail, and §6 says why that is safe.

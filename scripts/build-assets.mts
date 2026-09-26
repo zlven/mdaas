@@ -5,21 +5,29 @@
  * malformed source file stops the build rather than producing a silently empty
  * index. That is acceptance criterion A4.
  *
- * Two jobs:
+ * Three jobs:
  *   1. prompts/*.md    -> lib/generated/prompts.ts
  *   2. knowledge/<id>/ -> public/knowledge/<id>.json + manifest.json
+ *   3. pdfjs-dist      -> public/pdf/pdf.worker.min.mjs + public/pdf/cmaps/
  *
  * Knowledge is emitted into public/ rather than bundled so the browser fetches
  * only the selected agent's index. That is what makes cross-agent isolation
  * structural rather than a filter (§8.7, acceptance E4/E5/E6).
+ *
+ * The pdf.js worker and cMaps are copied for the same class of reason: a static
+ * export has no server to rewrite a hand-written asset URL, so the worker is
+ * served from a path the code builds itself out of `NEXT_PUBLIC_BASE_PATH`
+ * (lib/files/pdf.ts). Bundling it instead would leave whether it lands under the
+ * subpath up to the bundler — the one guess this repo has already paid for once
+ * (lib/rag/retriever.ts:20-30).
  *
  * Output is deterministic: no timestamps, stable ordering, content-addressed
  * hashes. A rebuild with unchanged sources produces byte-identical files.
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -29,6 +37,13 @@ import {
   countChars,
   type Chunk,
 } from "../lib/rag/chunk.ts";
+import {
+  PDF_CMAPS_PUBLIC_PATH,
+  PDF_CMAPS_SOURCE,
+  PDF_WORKER_PUBLIC_PATH,
+  PDF_WORKER_SOURCE,
+  PDFJS_VERSION,
+} from "../lib/files/vendor.ts";
 
 // `__dirname` is undefined in ESM. Derive the root from import.meta.url instead.
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -36,6 +51,8 @@ const PROMPTS_DIR = join(ROOT, "prompts");
 const KNOWLEDGE_DIR = join(ROOT, "knowledge");
 const GENERATED_DIR = join(ROOT, "lib", "generated");
 const PUBLIC_KNOWLEDGE_DIR = join(ROOT, "public", "knowledge");
+const PUBLIC_PDF_DIR = join(ROOT, "public", "pdf");
+const PDFJS_DIR = join(ROOT, "node_modules", "pdfjs-dist");
 
 /**
  * Clause markers every system prompt must contain — docs/04_AGENT_SPEC.md §3.
@@ -247,6 +264,98 @@ function buildKnowledge(): KnowledgeBuild {
 }
 
 // ---------------------------------------------------------------------------
+// 3. pdf.js worker and cMaps
+// ---------------------------------------------------------------------------
+
+interface PdfBuild {
+  version: string;
+  workerBytes: number;
+  cmaps: number;
+}
+
+/**
+ * Copies the two things pdf.js loads at runtime over the network.
+ *
+ * The version guard is the point of this function existing at all. The worker is
+ * a *separate build artefact* of the same library, and nothing in the type system
+ * or the bundler ties it to the `pdfjs-dist` the application code imports — so
+ * `npm update` could pair a 6.x worker with a 7.x API bundle and the symptom
+ * would be a PDF that fails to parse, in a browser, with no build error. Pinning
+ * the dependency exactly (`package.json`, no caret) closes the usual route; this
+ * check closes the rest, including a hand-edited lockfile.
+ *
+ * `public/pdf/` is rebuilt from scratch like `public/knowledge/`, so a cMap
+ * removed upstream cannot linger and be served.
+ */
+function buildPdfAssets(): PdfBuild {
+  const packageJsonPath = join(PDFJS_DIR, "package.json");
+  const workerPath = join(ROOT, PDF_WORKER_SOURCE);
+  const cmapsDir = join(ROOT, PDF_CMAPS_SOURCE);
+
+  if (!existsSync(packageJsonPath)) {
+    throw new AssetError(
+      "pdfjs-dist is not installed — run `npm install`. Uploads parse PDFs in the " +
+        "browser, so this is a runtime dependency, not a dev one.",
+      rel(PDFJS_DIR),
+    );
+  }
+
+  const installed = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
+  const version = installed.version ?? "unknown";
+
+  if (version !== PDFJS_VERSION) {
+    throw new AssetError(
+      `installed pdfjs-dist is ${version} but lib/files/vendor.ts declares ${PDFJS_VERSION}. ` +
+        "The worker and the API bundle are version-coupled: a mismatch ships a worker that " +
+        "does not match the code calling it, and the failure surfaces only as a PDF that will " +
+        "not parse. Update PDFJS_VERSION and re-run `npm install`.",
+      rel(packageJsonPath),
+    );
+  }
+
+  if (!existsSync(workerPath)) {
+    throw new AssetError(
+      `worker not found at ${PDF_WORKER_SOURCE} — pdfjs-dist's layout changed. Check ` +
+        "lib/files/vendor.ts against the installed package before adjusting it.",
+      rel(workerPath),
+    );
+  }
+
+  if (!existsSync(cmapsDir)) {
+    throw new AssetError(
+      `cMap directory not found at ${PDF_CMAPS_SOURCE}. Without cMaps a CJK PDF throws ` +
+        "rather than producing mojibake, which makes this a hard failure, not a degradation.",
+      rel(cmapsDir),
+    );
+  }
+
+  rmSync(PUBLIC_PDF_DIR, { recursive: true, force: true });
+  mkdirSync(join(PUBLIC_PDF_DIR, "cmaps"), { recursive: true });
+
+  const workerTarget = join(ROOT, "public", PDF_WORKER_PUBLIC_PATH);
+  copyFileSync(workerPath, workerTarget);
+
+  const cmapNames = readdirSync(cmapsDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+  const nonFile = cmapNames.find((entry) => !entry.isFile());
+  if (nonFile) {
+    throw new AssetError(
+      `unexpected ${nonFile.isDirectory() ? "directory" : "entry"} "${nonFile.name}" inside the cMap ` +
+        "directory — this copy is flat by assumption, and skipping it would ship an incomplete set.",
+      rel(join(cmapsDir, nonFile.name)),
+    );
+  }
+  if (cmapNames.length === 0) {
+    throw new AssetError("cMap directory is empty", rel(cmapsDir));
+  }
+
+  for (const entry of cmapNames) {
+    copyFileSync(join(cmapsDir, entry.name), join(ROOT, "public", PDF_CMAPS_PUBLIC_PATH, basename(entry.name)));
+  }
+
+  return { version, workerBytes: statSync(workerTarget).size, cmaps: cmapNames.length };
+}
+
+// ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 
@@ -255,12 +364,16 @@ function main(): void {
 
   const prompts = buildPrompts();
   const knowledge = buildKnowledge();
+  const pdf = buildPdfAssets();
 
   console.log("");
   console.log("  build:assets");
   console.log("");
   console.log(`  prompts      ${prompts.count} file(s), ${prompts.bytes} chars -> lib/generated/prompts.ts`);
   console.log(`  knowledge    ${knowledge.agents.length} agent(s), ${knowledge.chunks} chunk(s) -> public/knowledge/`);
+  console.log(
+    `  pdf.js       ${pdf.version}, worker ${pdf.workerBytes} bytes, ${pdf.cmaps} cMaps -> public/pdf/`,
+  );
   for (const agentId of knowledge.agents) {
     const entry = knowledge.manifest[agentId];
     if (!entry) continue;

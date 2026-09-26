@@ -156,6 +156,54 @@ export function abortError(): AppError {
 }
 
 /**
+ * The four upload refusals — docs/02_TECH_SPEC.md §8.7, `01_PRD.md` §6.
+ *
+ * One `ErrorCode` (`PARSE_FAILED`) with four messages, rather than four codes.
+ * The distinction the user needs is *which file* and *why*, and both are in the
+ * message; separate codes would widen §6.5's table and the PRD §9 row without
+ * changing what anyone sees.
+ *
+ * All four carry `remedy: undefined`, inherited from `PARSE_FAILED`: the file
+ * failed, the answer is not blocked by it, and there is nothing to repair from an
+ * error card. They are rendered on the file's own chip, because a failure belongs
+ * to one file — two files can fail for two different reasons in the same turn.
+ *
+ * Each message names the file, per `01_PRD.md` §6: "A parsing failure names the
+ * file and the reason. It never fails silently."
+ */
+export function fileTooLargeError(name: string, actual: string, limit: string): AppError {
+  return appError("PARSE_FAILED", `oversized: ${actual} > ${limit}`, {
+    message: `「${name}」有 ${actual}，超过了 ${limit} 的上限。这个文件没有被读取。`,
+  });
+}
+
+export function fileFormatUnsupportedError(name: string, accepted: string): AppError {
+  return appError("PARSE_FAILED", `unsupported extension`, {
+    message: `「${name}」不是支持的格式。可以上传 ${accepted}。`,
+  });
+}
+
+/**
+ * E9. A scanned or image-only PDF, which yields no text layer at all.
+ *
+ * Says "可能是" rather than asserting it: the extraction can also come back
+ * nearly empty from an unusual encoding, and telling someone their file is a
+ * scan when it is not would send them to re-scan a document they already have.
+ */
+export function fileNoTextError(name: string): AppError {
+  return appError("PARSE_FAILED", `no extractable text`, {
+    message: `「${name}」里没有可提取的文字，可能是扫描件或图片型 PDF。这类文件需要先做文字识别。`,
+  });
+}
+
+/** The parser itself threw: a corrupt file, or a format the library could not handle. */
+export function fileUnreadableError(name: string, reason: string): AppError {
+  return appError("PARSE_FAILED", reason, {
+    message: `「${name}」读不出来。文件可能已经损坏，或者不是它扩展名所说的格式。`,
+  });
+}
+
+/**
  * Maps an HTTP status onto an ErrorCode — docs/05_API_SPEC.md §7.
  *
  * `bodyText` is used only to distinguish cases the status alone cannot express

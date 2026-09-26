@@ -13,6 +13,7 @@
  */
 
 import { PROMPTS } from "@/lib/generated/prompts";
+import { PROFILE_NOTES_KEY } from "@/lib/agents/profile";
 import type { AgentConfig } from "@/lib/agents/types";
 
 import { career } from "@/lib/agents/configs/career";
@@ -64,6 +65,24 @@ function validate(agents: AgentConfig[]): void {
       throw new Error(
         `registry: agent id "${agent.id}" must be a lowercase slug — it is used as the knowledge/ directory name and the URL segment`,
       );
+    }
+
+    // A profile key is a storage key. Two fields sharing one would render two
+    // inputs writing the same value, and the user would watch the first one
+    // change as they typed into the second. Neither case is reachable by the
+    // type system — `key` is a plain string — so unlike tools, this one is
+    // worth a runtime check.
+    const keys = new Set<string>();
+    for (const field of agent.profile ?? []) {
+      if (field.key === PROFILE_NOTES_KEY) {
+        throw new Error(
+          `registry: "${agent.id}" declares a profile field with the reserved key "${PROFILE_NOTES_KEY}" — every agent already carries that key as the free-text 补充说明 (lib/agents/profile.ts)`,
+        );
+      }
+      if (keys.has(field.key)) {
+        throw new Error(`registry: "${agent.id}" declares the profile key "${field.key}" twice`);
+      }
+      keys.add(field.key);
     }
 
     if (agent.enabled) {

@@ -12,11 +12,14 @@
     "lint": "eslint",
     "pretypecheck": "npm run build:assets",
     "typecheck": "tsc --noEmit",
+    "verify:upload": "node --experimental-transform-types --no-warnings scripts/verify-upload.mts",
     "build:assets": "node --experimental-strip-types --no-warnings scripts/build-assets.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
+    "mammoth": "1.12.3",
     "next": "16.3.6",
+    "pdfjs-dist": "6.3.289",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

@@ -31,6 +31,7 @@
  * one frame — reads to the user as data loss.
  */
 
+import { PROFILE_NOTES_KEY, normalizeNotes } from "@/lib/agents/profile";
 import { appError, type AppError } from "@/lib/llm/errors";
 
 const DB_NAME = "mdaas.memory";
@@ -466,7 +467,34 @@ async function flush(agentId: string): Promise<void> {
 }
 
 /**
- * Sets one field. An empty value removes the key.
+ * Whether a write is allowed right now.
+ *
+ * Both refusals are silent on purpose: the UI is already gated on the same
+ * state, so a write arriving here means something called us out of order, and
+ * dropping it is the only safe answer. Writing over a profile we have not
+ * loaded yet is precisely how a slow read loses data, and the check living here
+ * is what stops the UI from getting it wrong.
+ */
+function writable(state: AgentState): boolean {
+  // Nothing is editable before the read settles.
+  if (state.snapshot.status === "loading") return false;
+  // The store opened but could not be read: a record may exist that we have
+  // never seen, so it is shown but not edited.
+  if (state.snapshot.status === "session-only" && !state.snapshot.editable) return false;
+  return true;
+}
+
+/** The tail every write shares: adopt, publish, schedule. */
+function commit(agentId: string, state: AgentState, fields: Record<string, string>): void {
+  state.fields = fields;
+  state.dirty = true;
+  transition(state);
+  emit(agentId);
+  queueWrite(agentId);
+}
+
+/**
+ * Sets one declared field. An empty value removes the key.
  *
  * Removing rather than storing `""` keeps one representation of "not answered":
  * otherwise the prompt would render `- 身高：` with nothing after it, and the
@@ -474,37 +502,41 @@ async function flush(agentId: string): Promise<void> {
  */
 export function setProfileField(agentId: string, key: string, value: string): void {
   const state = ensureState(agentId);
-  // Nothing is editable before the read settles. Writing over a profile we have
-  // not loaded yet is precisely how a slow read loses data, and the check lives
-  // here so the UI cannot get it wrong.
-  if (state.snapshot.status === "loading") return;
-  // The store opened but could not be read: a record may exist that we have
-  // never seen, so it is shown but not edited.
-  if (state.snapshot.status === "session-only" && !state.snapshot.editable) return;
+  if (!writable(state)) return;
 
   const trimmed = value.trim();
   const next = { ...state.fields };
   if (trimmed === "") delete next[key];
   else next[key] = trimmed;
 
-  state.fields = next;
-  state.dirty = true;
-  transition(state);
-  emit(agentId);
-  queueWrite(agentId);
+  commit(agentId, state, next);
 }
 
-/** The 清空档案 action. Clears the record; the user asked for it. */
+/**
+ * Writes 补充说明 — the one field that is not a single-line fact.
+ *
+ * **Separate from `setProfileField` because it must not trim.** That function
+ * stores the trimmed value, which would eat the newline the user just typed
+ * before they could type the next character, leaving a textarea that can never
+ * hold two lines. `normalizeNotes` decides where the line is instead.
+ */
+export function setProfileNotes(agentId: string, value: string): void {
+  const state = ensureState(agentId);
+  if (!writable(state)) return;
+
+  const stored = normalizeNotes(value);
+  const next = { ...state.fields };
+  if (stored === null) delete next[PROFILE_NOTES_KEY];
+  else next[PROFILE_NOTES_KEY] = stored;
+
+  commit(agentId, state, next);
+}
+
+/** The 清空档案 action. Clears the record, 补充说明 included; the user asked for it. */
 export function clearProfile(agentId: string): void {
   const state = ensureState(agentId);
-  if (state.snapshot.status === "loading") return;
-  if (state.snapshot.status === "session-only" && !state.snapshot.editable) return;
-
-  state.fields = {};
-  state.dirty = true;
-  transition(state);
-  emit(agentId);
-  queueWrite(agentId);
+  if (!writable(state)) return;
+  commit(agentId, state, {});
 }
 
 /**

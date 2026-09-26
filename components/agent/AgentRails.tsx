@@ -10,6 +10,11 @@ import { TOOL_DEFINITIONS } from "@/lib/tools/types";
  * `Workspace`, because its 「本次检索」 section is per-turn state that lives there;
  * that pulls this file into the client bundle, which for two static blocks is the
  * cheaper side of the trade.
+ *
+ * Two of its sections are **slots** — `retrieval` and `profile` — because both
+ * are client-rendered state that lives in `Workspace`. Passing them in keeps this
+ * file free of `"use client"`, so the capability and knowledge lines stay in the
+ * server component where they belong.
  */
 
 export function AgentIdentity({ agent }: { agent: AgentConfig }) {
@@ -61,7 +66,15 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
  * `retrieval` is a slot: the panel below it is client-rendered because what was
  * retrieved is per-turn state.
  */
-export function AgentFacts({ agent, retrieval }: { agent: AgentConfig; retrieval: React.ReactNode }) {
+export function AgentFacts({
+  agent,
+  retrieval,
+  profile,
+}: {
+  agent: AgentConfig;
+  retrieval: React.ReactNode;
+  profile: React.ReactNode;
+}) {
   return (
     <aside className="hidden w-72 shrink-0 lg:block">
       <div className="sticky top-24 space-y-6">
@@ -81,6 +94,14 @@ export function AgentFacts({ agent, retrieval }: { agent: AgentConfig; retrieval
         ) : null}
 
         {agent.workflows.length > 0 ? <Fact label="工作流">{agent.workflows.join(" · ")}</Fact> : null}
+
+        {/* Not a `Fact`: it is the one section here the user operates rather
+            than reads. It sits with the describing sections anyway, because
+            that is what it is — standing facts about the user, alongside what
+            the agent can do and what it knows (03_UI_UX_SPEC.md §5). The
+            collapsible controls are all in the centre column; this is not one
+            of them. */}
+        {profile}
 
         {retrieval}
       </div>
