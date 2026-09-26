@@ -4,7 +4,9 @@
   "private": true,
   "description": "AI 超级专家 — 垂直领域 AI 专家矩阵",
   "scripts": {
+    "predev": "npm run build:assets",
     "dev": "next dev",
+    "prebuild": "npm run build:assets",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
