@@ -45,6 +45,18 @@ const nextConfig: NextConfig = {
    * URLs without rewrite rules.
    */
   trailingSlash: true,
+
+  /**
+   * Next 16 appends a `<!-- BEGIN:nextjs-agent-rules -->` block to CLAUDE.md on
+   * every `next dev`. That file is a governed document here — it states which
+   * docs outrank which and which constraints decide a design question — so a dev
+   * server editing it would put an unreviewed diff in front of every commit and
+   * invite merge conflicts with deliberate edits.
+   *
+   * The block only points agents at Next's bundled docs; this repository already
+   * has AGENT_CODING_PROMPT.md as the entry point for coding agents.
+   */
+  agentRules: false,
 };
 
 export default nextConfig;
