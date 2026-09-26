@@ -1,5 +1,6 @@
 import { tintOf } from "@/components/agent/tint";
 import type { AgentConfig } from "@/lib/agents/types";
+import { TOOL_DEFINITIONS } from "@/lib/tools/types";
 
 /**
  * The workspace's two rails — docs/03_UI_UX_SPEC.md §5.
@@ -72,7 +73,12 @@ export function AgentFacts({ agent, retrieval }: { agent: AgentConfig; retrieval
             : `已接入 ${agent.knowledgeBase} 的知识库，打开对话时按需下载`}
         </Fact>
 
-        {agent.tools.length > 0 ? <Fact label="工具">{agent.tools.join(" · ")}</Fact> : null}
+        {/* `tools` holds ids, so the label has to be looked up — joining the
+            array directly would print slugs like "food-tef". The controls live
+            in the centre column; this line only describes the agent. */}
+        {agent.tools.length > 0 ? (
+          <Fact label="工具">{agent.tools.map((id) => TOOL_DEFINITIONS[id].label).join(" · ")}</Fact>
+        ) : null}
 
         {agent.workflows.length > 0 ? <Fact label="工作流">{agent.workflows.join(" · ")}</Fact> : null}
 

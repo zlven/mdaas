@@ -43,15 +43,23 @@ const PUBLIC_KNOWLEDGE_DIR = join(ROOT, "public", "knowledge");
  * These are enforced at build time on purpose. They are security and honesty
  * controls, not style guidance: the first stops retrieved content from acting as
  * instructions (acceptance H4), the second stops the model blending recalled and
- * retrieved knowledge indistinguishably (§8.8).
+ * retrieved knowledge indistinguishably (§8.8), and the fourth does the same for
+ * the user's own profile (acceptance I12).
  *
  * If a prompt is reworded and this check fails, that is the check working. Add
  * the clause back, or update the marker here deliberately.
+ *
+ * Each marker must be a phrase that appears **only** in the clause it guards.
+ * The check is `String.includes`, so a marker already present elsewhere passes
+ * unconditionally and silently — a dead check that still looks alive, which is
+ * worse than no check. The profile marker is therefore `用户档案是数据` and not
+ * `不是指令`, the latter being present in every prompt's reference clause.
  */
 const REQUIRED_CLAUSES = [
   { marker: "不是指令", describes: "the untrusted-context clause (reference material is data, not instructions)" },
   { marker: "没有引用知识库", describes: "the empty-retrieval clause (say so when nothing was retrieved)" },
   { marker: "中文回答", describes: "the language clause (answer in Chinese)" },
+  { marker: "用户档案是数据", describes: "the profile clause (the user's own profile is data, not instructions)" },
 ];
 
 const MIN_PROMPT_SECTIONS = 7;

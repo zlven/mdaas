@@ -44,6 +44,8 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | 9 | Per-agent safety policies, at minimum `health-edu` on `fitness` |
 | 10 | AI identity transparency |
 | 11 | Error and empty states throughout |
+| 12 | Per-agent profile — structured fields the user declares, stored in this browser (`04_AGENT_SPEC.md` §6) |
+| 13 | Per-agent instant tools — small client-side utilities usable without a conversation (`04_AGENT_SPEC.md` §7) |
 
 ### Explicitly out of scope
 
@@ -96,12 +98,13 @@ Filters are **not** in the MVP — ten cards fit on one screen.
 ┌────────────────────────────────────────────────────────────┐
 │ ← Back        💼 Office Expert          [Settings] [Clear] │
 ├──────────────┬──────────────────────────────┬──────────────┤
+│              │ ▸ 我的档案 · 已填 3 项        │ Capabilities │
+│  Agent       │ ▸ 工具 · 会议成本             │              │
+│  identity    │                              │ Knowledge    │
+│              │      Conversation            │ Tools        │
+│  description │                              │ Workflow     │
 │              │                              │              │
-│  Agent       │      Conversation            │ Capabilities │
-│  identity    │                              │              │
-│              │                              │ Knowledge    │
-│  description │                              │ Tools        │
-│              │                              │ Workflow     │
+│  tags        │                              │  本次检索     │
 │              │                              │              │
 ├──────────────┴──────────────────────────────┴──────────────┤
 │ [📎 Attach] [⚡ Workflow]                     [Send →]      │
@@ -109,6 +112,8 @@ Filters are **not** in the MVP — ten cards fit on one screen.
 ```
 
 Right rail collapses below `lg`. Below `md`, chat takes the full viewport and the agent identity moves into the header.
+
+**The profile and tools strips sit at the top of the centre column, not in the right rail.** The right rail *describes* the agent — what it can do, what it knows, which tools it has. The profile and the tools are things the user *operates*, and an operable control belongs where the work happens. They also hold input state, so each must exist exactly once in the DOM, and the centre column is the only zone present at every breakpoint. Both collapse to a single line and are closed by default.
 
 Opening a `Coming Soon` agent's URL directly must render the agent's description with a clear "not available yet" state and **no input box**.
 

@@ -26,6 +26,9 @@ export type ErrorCode =
   | "PROVIDER_ERROR"
   | "RETRIEVAL_FAILED"
   | "PARSE_FAILED"
+  | "STORAGE_UNAVAILABLE"
+  | "STORAGE_READ_FAILED"
+  | "STORAGE_WRITE_FAILED"
   | "ABORTED";
 
 /**
@@ -88,6 +91,19 @@ const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
   PROVIDER_ERROR: "服务商返回了错误。这通常是暂时的，稍后重试即可。",
   RETRIEVAL_FAILED: "知识库没能加载，这次的回答没有引用知识库。",
   PARSE_FAILED: "文件读不出来。",
+  // Storage, not the provider. Neither of these is fixable from an error card,
+  // so neither borrows a provider code: PROVIDER_ERROR would tell the user to
+  // retry the provider, PARSE_FAILED talks about reading a file, and
+  // RETRIEVAL_FAILED would have the app claim the knowledge base broke.
+  STORAGE_UNAVAILABLE:
+    "浏览器不允许这个页面保存数据（隐私模式或站点数据被拦截时会出现）。档案只在本次打开期间有效，刷新后会丢失。",
+  // Distinct from STORAGE_UNAVAILABLE, and the difference is not cosmetic: here
+  // the store opened, so a profile may exist that we simply could not read. That
+  // is why the form is locked rather than session-only-and-editable — and saying
+  // 「刷新后会丢失」 to someone whose data is still on disk would be false.
+  STORAGE_READ_FAILED:
+    "浏览器里可能存着这个专家的档案，但这次没能读出来。现在不能编辑，以免覆盖掉原有的内容。刷新页面可以再试一次。",
+  STORAGE_WRITE_FAILED: "这次修改没能存进浏览器。更早保存的内容还在，可以重试。",
   ABORTED: "已取消。",
 };
 
@@ -105,6 +121,13 @@ const DEFAULT_REMEDY: Record<ErrorCode, Remedy | undefined> = {
   // repair from an error card, and the answer continues without knowledge.
   RETRIEVAL_FAILED: undefined,
   PARSE_FAILED: undefined,
+  // What has to change is a browser setting, and the message already says so.
+  STORAGE_UNAVAILABLE: undefined,
+  // The repair is a page reload, which is not a control we can put in a card.
+  STORAGE_READ_FAILED: undefined,
+  // The library opened and read fine; one write did not land. Retrying is a real
+  // action — the user may free up quota, and the next attempt may succeed.
+  STORAGE_WRITE_FAILED: { kind: "retry" },
   ABORTED: undefined,
 };
 

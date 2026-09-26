@@ -7,6 +7,8 @@
  * chatbot with ten names (docs/04_AGENT_SPEC.md §1).
  */
 
+import type { ToolId } from "@/lib/tools/types";
+
 /**
  * Intent, not wire parameters — docs/02_TECH_SPEC.md §6.4.
  *
@@ -39,6 +41,29 @@ export type SafetyPolicyId =
  */
 export type AgentCategory = "work" | "growth" | "health" | "life";
 
+/**
+ * One field of an agent's profile — docs/04_AGENT_SPEC.md §6.
+ *
+ * The agent declares what it needs to know and the user fills it in. Because the
+ * key and the type come from here rather than from free-form user input, the
+ * agent knows what it is reading and the UI can render a form instead of a blank
+ * textarea. Values are stored as strings keyed by `key`; `type` governs the
+ * input control, not the storage.
+ */
+interface ProfileFieldBase {
+  /** Stable key — the storage key, and what a future migration would key on. */
+  key: string;
+  /** Chinese label, shown in the form and in the block injected into the prompt. */
+  label: string;
+  /** Optional clarification shown under the input. */
+  hint?: string;
+}
+
+export type ProfileField =
+  | (ProfileFieldBase & { type: "text" })
+  | (ProfileFieldBase & { type: "number"; unit?: string })
+  | (ProfileFieldBase & { type: "select"; options: readonly string[] });
+
 export interface AgentConfig {
   /** Stable slug. Must match the `knowledge/<id>/` directory name. */
   id: string;
@@ -65,8 +90,21 @@ export interface AgentConfig {
   systemPrompt: string;
   /** `knowledge/<id>/`, or null when the agent has no knowledge base. */
   knowledgeBase: string | null;
-  /** Tool ids. Empty in the MVP — docs/04_AGENT_SPEC.md §1. */
-  tools: string[];
+  /**
+   * Fields this agent asks the user to fill in — docs/04_AGENT_SPEC.md §6.
+   *
+   * Absent means the agent has no profile, which is a valid state rather than an
+   * unfinished one. Declaring the fields here is the entire cost of adding one
+   * (06_ACCEPTANCE.md C4).
+   */
+  profile?: readonly ProfileField[];
+  /**
+   * Tool ids — docs/04_AGENT_SPEC.md §7. Empty when the agent carries none.
+   *
+   * Typed rather than `string[]` so a bad id is a compile error; see
+   * `lib/tools/types.ts`.
+   */
+  tools: readonly ToolId[];
   /** Workflow ids from `lib/workflow/definitions/`. Empty when none. */
   workflows: string[];
   modelProfile: ModelProfileId;

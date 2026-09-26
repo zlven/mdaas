@@ -192,14 +192,14 @@ Three zones.
 ┌──────────────────────────────────────────────────────────────┐
 │ ← 返回      💼 AI 全能办公专家          [设置]  [清空对话]     │
 ├────────────┬────────────────────────────────┬────────────────┤
-│            │                                │                │
-│  Agent     │        Conversation            │   能力          │
-│  identity  │                                │   ────         │
-│            │   ┌──────────────────────┐     │   知识库        │
-│  icon      │   │ user message         │     │   工具          │
-│  description│  └──────────────────────┘     │   工作流        │
-│            │                                │                │
-│  tags      │   ┌──────────────────────┐     │   本次检索       │
+│            │ ▸ 我的档案 · 已填 3 项          │   能力          │
+│  Agent     │ ▸ 工具 · 会议成本               │   ────         │
+│  identity  │ ──────────────────────────────  │   知识库        │
+│            │   ┌──────────────────────┐     │   工具          │
+│  icon      │   │ user message         │     │   工作流        │
+│  description│  └──────────────────────┘     │                │
+│            │                                │   本次检索       │
+│  tags      │   ┌──────────────────────┐     │                │
 │            │   │ assistant message    │     │   ────         │
 │            │   │ (streaming)          │     │   · chunk 1    │
 │            │   └──────────────────────┘     │   · chunk 2    │
@@ -213,9 +213,26 @@ Three zones.
 |---|---|---|
 | Left rail | 240px | Icon, names, description, capability tags |
 | Centre | flexible | Conversation, max-width ~720px, centred |
-| Right rail | 280px | Capabilities, knowledge, tools, workflows, **and what was retrieved this turn** |
+| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **and what was retrieved this turn** |
 
 Both rails collapse below `lg`. The **centre column never exceeds ~720px** — full-width prose on a 1440px monitor is unreadable.
+
+### The profile and tools strips
+
+Above the conversation, in the centre column:
+
+```
+▸ 我的档案 · 已填 3 项
+▸ 工具 · 会议成本
+```
+
+- Each is a `<details>` collapsed to a single line by default — the same interaction as the retrieved-context panel, which makes keyboard operation free.
+- **Centre column, not the right rail.** The rail describes the agent; these are things the user operates. The rail goes on listing tool *names* as description.
+- **Mounted exactly once.** They hold input state, and the narrow-screen adaptation *duplicates* the rail rather than moving it, so a component with drafts mounted twice has two independent drafts — typing on a narrow viewport and then widening the window would silently discard the input. The centre column is the only zone present at every breakpoint, so it is the only correct home.
+- **Loading is not empty.** While the profile is being read the strip says 读取中. Rendering the empty state first and filling it in a frame later tells the user their data is gone.
+- The profile form reuses §8's field styling and carries a two-step 清空档案 confirmation. Its footer states that the profile is stored in this browser, does not sync across devices, and may be overwritten when several tabs are open.
+- When the browser refuses storage, a **neutral**-coloured notice appears inside the strip — not `--danger`. The user has done nothing wrong, and a permanently-red banner teaches people to ignore red.
+- When the profile is empty and there is no conversation yet, the empty state gains one line above the suggested prompts inviting the user to fill it in. This is the product's onboarding moment, not chrome.
 
 ### The retrieved-context panel
 

@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { AgentFacts } from "@/components/agent/AgentRails";
+import { ProfilePanel } from "@/components/agent/ProfilePanel";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Markdown } from "@/components/chat/Markdown";
 import { RetrievalPanel } from "@/components/chat/RetrievalPanel";
+import { ToolPanel } from "@/components/tools/ToolPanel";
 import { Button, buttonClass } from "@/components/ui/Button";
+import { profileEntries } from "@/lib/agents/profile";
 import type { AgentConfig } from "@/lib/agents/types";
 import { appError, isAppError, type AppError } from "@/lib/llm/errors";
 import { stream } from "@/lib/llm/gateway";
@@ -15,6 +18,7 @@ import type { ChatMessage, Credentials } from "@/lib/llm/types";
 import type { RetrievedChunk } from "@/lib/rag/bm25";
 import { composeSystemPrompt } from "@/lib/rag/context";
 import { loadAgentRetriever } from "@/lib/rag/retriever";
+import { profileSnapshot } from "@/lib/store/memory";
 import { isConfigured, settingsSnapshot, subscribeSettings } from "@/lib/store/settings";
 
 /**
@@ -96,14 +100,20 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       setRetrieval(agent.knowledgeBase === null ? NO_RETRIEVAL : { hits: [], error: null, pending: true });
       setMessages([...base, { role: "assistant", content: "" }]);
 
+      // --- Standing context: the user's profile ------------------------------
+      // Read at send time rather than held in state. The store is synchronous, so
+      // this is the profile as of this message with no render in between — a
+      // value captured in a closure would be one edit stale.
+      const snapshot = profileSnapshot(agent.id);
+      const profile = snapshot.status === "loading" ? [] : profileEntries(agent.profile, snapshot.fields);
+
       // --- Reference material ------------------------------------------------
-      let system = agent.systemPrompt;
+      let hits: RetrievedChunk[] = [];
 
       if (agent.knowledgeBase !== null) {
         try {
           const retriever = await loadAgentRetriever(agent.id);
-          const hits = retriever.retrieve(prompt);
-          system = composeSystemPrompt(agent.systemPrompt, hits);
+          hits = retriever.retrieve(prompt);
           setRetrieval({ hits, error: null, pending: false });
         } catch (err) {
           setRetrieval({
@@ -115,6 +125,12 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
           });
         }
       }
+
+      // Composed from both, after retrieval has settled, so a knowledge-base
+      // failure costs the turn its reference material and nothing else. Building
+      // the prompt inside the `try` above would drop the profile on a retrieval
+      // error, and the user would read that as the agent having ignored it.
+      const system = composeSystemPrompt(agent.systemPrompt, hits, profile);
 
       // --- The answer --------------------------------------------------------
       const controller = new AbortController();
@@ -199,7 +215,19 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       <div className="flex min-w-0 flex-1 justify-center">
         <div className="flex w-full max-w-[720px] flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
-            <AiNotice />
+            <div className="flex items-center gap-4">
+              {/* 03_UI_UX_SPEC.md §5 puts `← 返回` at the left of the workspace
+                  bar. It lives here rather than above the rails because the rails
+                  collapse below `lg` — a way back that disappears on a phone is
+                  the one that is needed most. */}
+              <Link
+                href="/agents/"
+                className="text-micro text-ink-muted transition-colors duration-150 ease-out hover:text-ink"
+              >
+                ← 返回
+              </Link>
+              <AiNotice />
+            </div>
             {messages.length > 0 && status === "idle" ? (
               <button
                 type="button"
@@ -210,6 +238,16 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
               </button>
             ) : null}
           </div>
+
+          {/* The profile and the tools, one line each, mounted **once** — the
+              centre column is the only position present at every breakpoint. See
+              the note in components/tools/ToolPanel.tsx; the `lg:hidden` copy
+              further down is safe only because the retrieval panel is stateless.
+              `send` is passed rather than a bare setter so a tool's result enters
+              the conversation as an ordinary user turn, with retrieval and history
+              behaving exactly as if it had been typed. */}
+          <ProfilePanel agent={agent} nudge={messages.length === 0} />
+          <ToolPanel tools={agent.tools} onSend={send} ready={ready} busy={status === "streaming"} />
 
           <div className="min-h-[40vh]">
             {messages.length === 0 ? (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { FIELD as FIELD_CLASS, LABEL as LABEL_CLASS } from "@/components/ui/field";
 import type { AppError } from "@/lib/llm/errors";
 import { PROVIDER_LABELS, SUGGESTED_MODELS, validate } from "@/lib/llm/gateway";
 import type { Credentials, ProviderId } from "@/lib/llm/types";
@@ -41,8 +42,9 @@ type Status =
   | { kind: "ok"; models: string[] }
   | { kind: "error"; error: AppError };
 
-const FIELD = "mt-1 w-full rounded-[var(--radius)] border border-line bg-surface px-3 py-2 text-body text-ink placeholder:text-ink-subtle";
-const LABEL = "block text-small font-medium text-ink";
+// Shared with the profile form — see components/ui/field.ts.
+const FIELD = FIELD_CLASS;
+const LABEL = LABEL_CLASS;
 
 export function SettingsForm() {
   const saved = useSyncExternalStore(subscribeSettings, settingsSnapshot, SERVER_SETTINGS);
