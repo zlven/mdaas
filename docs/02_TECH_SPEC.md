@@ -174,6 +174,7 @@ export interface GenerateRequest {
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  effort?: Effort;          // 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   signal?: AbortSignal;
 }
 
@@ -192,6 +193,10 @@ export type StreamChunk =
 ```
 
 Adapters: `openai`, `anthropic`, `google`, plus `compatible` (any OpenAI-shaped endpoint, configured with a user-supplied `baseURL`).
+
+**Why `effort` is on the request.** §6.4 says a profile expresses intent and the adapter decides what reaches the wire — but something still has to carry that intent from the profile to the adapter. `effort` is that carrier for Anthropic's current generation, which removed `temperature` in favour of `output_config.effort`. The alternative, each adapter importing the profile table, would put profile knowledge in four places instead of one.
+
+Both `temperature` and `effort` are set on every request. Each adapter drops what its provider does not accept: the Anthropic adapter ignores `temperature`, and the other three ignore `effort`.
 
 ### 6.1 CORS — the constraint that shapes this section
 
