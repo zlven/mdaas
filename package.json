@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "pretypecheck": "npm run build:assets",
     "typecheck": "tsc --noEmit",
     "build:assets": "node --experimental-strip-types --no-warnings scripts/build-assets.mts"
   },
