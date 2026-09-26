@@ -32,9 +32,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # `npm run build` is the single entry point. Once the asset build script
-      # lands it is chained into this command, so this workflow does not need to
-      # change — see docs/02_TECH_SPEC.md §4.
+      # Deliberately before the build, not after.
+      #
+      # This step is the one that fails when the repository's Pages source is not
+      # set to "GitHub Actions" — the default is "Deploy from a branch", under
+      # which GitHub publishes the branch with Jekyll and this workflow can never
+      # deploy at all. Running it first turns that misconfiguration into a
+      # five-second failure instead of one at the end of a full build.
+      #
+      # If it fails here, the fix is in repository settings, not in this file:
+      # Settings -> Pages -> Build and deployment -> Source -> GitHub Actions.
+      - uses: actions/configure-pages@v5
+
+      # `npm run build` is the single entry point. It runs the asset build via
+      # the prebuild hook — see docs/02_TECH_SPEC.md §4.
       - name: Build static export
         run: npm run build
         env:
@@ -42,8 +53,6 @@ jobs:
           # See the comment in next.config.ts. Remove this when moving to a
           # custom domain.
           NEXT_PUBLIC_BASE_PATH: /mdaas
-
-      - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
