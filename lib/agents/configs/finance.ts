@@ -2,7 +2,7 @@ import type { AgentConfig } from "@/lib/agents/types";
 import { NOT_IMPLEMENTED_PROMPT } from "@/lib/agents/stub-prompt";
 
 /**
- * Coming Soon — docs/04_AGENT_SPEC.md §4.4.
+ * Coming Soon — docs/04_AGENT_SPEC.md §4.5.
  *
  * `financial-edu`, not financial advice: no securities recommendation, no
  * return guarantee, no principal guarantee.

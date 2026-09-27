@@ -139,12 +139,12 @@ body {
    Agent icon plate — docs/03_UI_UX_SPEC.md §2, §4
 
    Each agent gets its own hue; everything else on the card stays neutral. That
-   restraint is what keeps ten cards from reading as a toy.
+   restraint is what keeps nine cards from reading as a toy.
 
    The hue is derived from the agent id and passed in as `--tint`, rather than
    stored on the config. A `tint` field would have to be filled in for every new
-   agent, and C4 asks that adding an eleventh agent touch nothing but
-   `lib/agents/configs/`. Deriving it also keeps the eleven hues evenly spread
+   agent, and C4 asks that adding a tenth agent touch nothing but
+   `lib/agents/configs/`. Deriving it also keeps the ten hues evenly spread
    instead of drifting as agents are added.
 
    Saturation and lightness are fixed here, not derived, so every hue is equally
@@ -178,5 +178,33 @@ body {
 @keyframes caret-blink {
   50% {
     opacity: 0;
+  }
+}
+
+/* ============================================================================
+   Workflow step marker — docs/03_UI_UX_SPEC.md §7
+
+   The step that is running breathes. A heartbeat rather than the caret's
+   `step-end` flicker: a caret marks text arriving now, a step runs for forty
+   seconds, and a 1.5s opacity pulse reads as alive where a hard blink reads as a
+   rendering fault.
+
+   Opacity only — §2 allows opacity and transform, and nothing here should be
+   able to push a layout around while the user is reading the step above it.
+
+   J6 needs no rule of its own: the global `prefers-reduced-motion` block above
+   already forces the duration to 0.01ms and the iteration count to 1, which
+   leaves the marker solid and still — the correct degraded state, because the
+   marker's *colour* is what carries the status and only the breathing is
+   decoration.
+   ========================================================================= */
+
+.workflow-marker-running {
+  animation: workflow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes workflow-pulse {
+  50% {
+    opacity: 0.35;
   }
 }

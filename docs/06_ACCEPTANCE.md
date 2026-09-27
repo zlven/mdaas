@@ -29,7 +29,7 @@ Criteria are numbered `A1 … K4`. An ID is referenced from other documents; kee
 
 | # | Criterion | How to verify |
 |---|---|---|
-| B1 | All ten agents appear as cards, with the three functional ones enabled and seven showing `Coming Soon` | load `/` |
+| B1 | All nine agents appear as cards, with the four functional ones enabled and five showing `Coming Soon` | load `/` |
 | B2 | The agent grid begins above the fold at 1440×900 | screenshot at that size |
 | B3 | `Coming Soon` cards have **no hover response at all** | hover one; nothing changes |
 | B4 | The four-beat strip (选专家 → 给任务 → 查知识 → 出结果) is present | load `/` |
@@ -43,13 +43,13 @@ Criteria are numbered `A1 … K4`. An ID is referenced from other documents; kee
 
 | # | Criterion | How to verify |
 |---|---|---|
-| C1 | All ten agents are defined in `lib/agents/configs/` | read the directory |
-| C2 | The seven `Coming Soon` agents have `enabled: false` | read the configs |
-| C3 | The seven have **no** `prompts/<id>.md`, no `knowledge/<id>/`, no workflow definition | check the filesystem |
-| C4 | **Adding an eleventh agent requires only** a config file, a prompt file, optionally knowledge, optionally a workflow | actually add a throwaway agent, confirm nothing else needs editing, then remove it |
+| C1 | All nine agents are defined in `lib/agents/configs/` | read the directory |
+| C2 | The five `Coming Soon` agents have `enabled: false` | read the configs |
+| C3 | The five have **no** `prompts/<id>.md`, no `knowledge/<id>/`, no workflow definition | check the filesystem |
+| C4 | **Adding a tenth agent requires only** a config file, a prompt file, optionally knowledge, optionally a workflow | actually add a throwaway agent, confirm nothing else needs editing, then remove it |
 | C5 | No runtime code branches on an agent `id` | `grep -rn "=== 'creator'\|=== 'office'\|=== 'fitness'"` outside `configs/` returns nothing |
 
-**C4 is the load-bearing criterion.** It is the difference between a platform and ten hardcoded chatbots. Do not skip the throwaway-agent test because it seems obvious — it is exactly the kind of claim that is false in practice and true in the author's head.
+**C4 is the load-bearing criterion.** It is the difference between a platform and nine hardcoded chatbots. Do not skip the throwaway-agent test because it seems obvious — it is exactly the kind of claim that is false in practice and true in the author's head.
 
 ---
 
@@ -76,7 +76,7 @@ Criteria are numbered `A1 … K4`. An ID is referenced from other documents; kee
 
 | # | Criterion | How to verify |
 |---|---|---|
-| E1 | Knowledge for all three functional agents is built into `public/knowledge/*.json` | inspect the build output |
+| E1 | Knowledge for all four functional agents is built into `public/knowledge/*.json` | inspect the build output |
 | E2 | A domain question retrieves visibly relevant chunks | ask the office agent about 会议纪要; the panel shows meeting-summary chunks |
 | E3 | The retrieved-context panel shows chunk text and source file, collapsed by default | observe |
 | E4 | **The office agent cannot retrieve creator or fitness knowledge** | ask the office agent a creator question; no creator chunk may appear in the panel |
@@ -116,7 +116,7 @@ The left column is a set of pure functions under `lib/files/`; the right column 
 
 | # | Criterion | How to verify |
 |---|---|---|
-| F1 | Each functional agent exposes its workflow in the chat input | open the ⚡ control |
+| F1 | Each agent that declares a workflow exposes it in the chat input, labelled by the workflow's **Chinese name** (「⚡ 30 天内容计划」), never by its id or the word 「工作流」. An agent declaring none shows **no control at all** — not a disabled one | open ⚡ on 办公 / 自媒体 / 健身; open 考研公考 and confirm the control is absent |
 | F2 | A workflow runs stage by stage with visible progress | run one |
 | F3 | **`creator-30day` has exactly 7 stages**, ending with 增长建议 | count them |
 | F4 | A completed stage is expandable before the run finishes | expand stage 1 while stage 3 runs |
@@ -124,8 +124,13 @@ The left column is a set of pure functions under `lib/files/`; the right column 
 | F6 | Workflow state survives a reload | reload mid-run |
 | F7 | Stages produce Chinese output regardless of the invoking language | run with an English prompt |
 | F8 | The completed workflow renders as one structured artefact | run to completion |
+| F9 | **`office-meeting-summary` invents no owner or deadline the source material does not state** — where the transcript is silent, the section says so | paste a transcript that names no owners, then read the 行动项 table |
 
 F3 is checked because an earlier draft of `01_PRD.md` specified seven stages while the acceptance list specified six; 增长建议 was missing. `00_PRODUCT_BRIEF.md` §8 records the correction. The two documents must not drift apart again.
+
+F1 was rewritten when `study` was promoted. It used to read "each **functional** agent exposes its workflow", which was true while the functional three all had one; `study` is functional and declares `workflows: []`, so the old wording became a criterion that cannot pass. The new wording keeps the assertion where it has teeth — the control is labelled with a Chinese name rather than the id, which is the exact bug `AgentRails` printed (`工作流：office-meeting-summary`) before it was fixed — and adds the negative case, because "no control" is the deliberate behaviour and a disabled one would contradict `00_PRODUCT_BRIEF.md` §10.3.
+
+F9 is here because the promise was already being made by two documents and checked by none. `01_PRD.md` §8.3 and `02_TECH_SPEC.md` §8.7 both cited it **as F5**, which is in fact "a failed stage shows an error and a retry"; both now point here instead. It is the most valuable sentence in the demo (`DEMO_SCRIPT.md` scenario 2: 「我们宁可留空，也不让它编一个出来」), and nothing verified it. It is also the one criterion a workflow makes *harder* rather than easier: the transcript now reaches seven stages instead of one, so an invention anywhere in the chain lands in the artefact.
 
 ---
 
@@ -224,7 +229,7 @@ The MVP ships when:
 1. A–K all pass, each verified by running its check.
 2. A person who has never seen the project can go from the landing page to a useful agent answer in **under three minutes**, supplying only their own API key.
 3. Deploying costs ¥0 and requires no server.
-4. The eleven-agent test (C4) has been run, not reasoned about.
+4. The ten-agent test (C4) has been run, not reasoned about.
 5. The prompt-injection tests (H4/H5/I12) have been run with a real planted injection.
 6. A real PDF and a real DOCX have been parsed in a browser, with the pdf.js worker confirmed loaded rather than faked (E8).
 

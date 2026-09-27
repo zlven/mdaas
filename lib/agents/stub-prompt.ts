@@ -1,7 +1,7 @@
 /**
  * The system prompt carried by agents that are not implemented.
  *
- * docs/04_AGENT_SPEC.md §4.4 is explicit that the seven Coming Soon agents must
+ * docs/04_AGENT_SPEC.md §4.4 is explicit that the five Coming Soon agents must
  * not have real prompts written in the MVP: shipping an unverified prompt for
  * `mental` or `parenting` would carry safety obligations that nothing checks.
  *

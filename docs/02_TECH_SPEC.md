@@ -162,7 +162,7 @@ export interface AgentConfig {
 
 ### Adding an agent — the four-step test
 
-Adding agent #11 must require exactly:
+Adding agent #10 must require exactly:
 
 1. a new file in `lib/agents/configs/`,
 2. a new `prompts/<id>.md`,
@@ -245,7 +245,7 @@ The gateway emits `StreamChunk`s; the UI renders text as it arrives. Streaming i
 
 ### 6.4 Model profiles — intent, not parameters
 
-`ModelProfileId` decouples agent config from concrete model names, so a provider swap does not require editing ten agent configs.
+`ModelProfileId` decouples agent config from concrete model names, so a provider swap does not require editing nine agent configs.
 
 A profile expresses **intent**. It does **not** carry wire parameters, because the parameters that control sampling differ per provider *and per model generation* — and getting this wrong is a 400 from the provider, not a subtly worse answer.
 
@@ -259,7 +259,7 @@ export const PROFILE_INTENT: Record<ProfileIntent, {
 }> = {
   reasoning: { maxTokens: 16000, anthropicEffort: 'high',   temperature: 0.3 },  // office, career, study, finance
   creative:  { maxTokens: 16000, anthropicEffort: 'medium', temperature: 0.8 },  // creator, style
-  balanced:  { maxTokens:  8000, anthropicEffort: 'medium', temperature: 0.6 },  // fitness, hair, mental, parenting
+  balanced:  { maxTokens:  8000, anthropicEffort: 'medium', temperature: 0.6 },  // fitness, mental, parenting
 };
 ```
 
@@ -440,7 +440,7 @@ PDF via `pdf.js`, DOCX via `mammoth`, plus `.txt` and `.md`. Parsed **in the bro
 The parsed text goes into the prompt **in full, up to `INLINE_BUDGET_CHARS` non-whitespace characters** (`lib/files/limits.ts`). Retrieval alone is not sufficient here, and the requirement comes from three places that all assume the document is in front of the model:
 
 - `01_PRD.md` §8.3 — the office meeting-summary workflow is "a single structured call **over** an uploaded transcript".
-- `01_PRD.md` F5 — the agent must not invent an owner or a deadline "not present in the source". A retrieval miss silently converts "not present in the source" into "present but not retrieved", which is the one failure the criterion exists to prevent.
+- `01_PRD.md` F9 — the agent must not invent an owner or a deadline "not present in the source". A retrieval miss silently converts "not present in the source" into "present but not retrieved", which is the one failure the criterion exists to prevent. (Both this line and `01_PRD.md` §8.3 cited it as F5; F5 is "a failed stage shows an error and a retry".)
 - Every prompt's §8.2 — 用户上传文件后，先说明你读到了什么（文档类型、大致结构、篇幅）, and 如果文件明显被截断…直接告诉用户. Truncation is only observable to the model if the text arrives directly.
 
 Text beyond `INLINE_BUDGET_CHARS` is chunked and merged into the **session's** retrieval pool, so a follow-up question can still surface it. Uploaded chunks are:
@@ -504,6 +504,24 @@ export interface WorkflowContext {
   onProgress(stepId: string, status: StepStatus): void;
 }
 ```
+
+> **⚠ The sketch above is superseded — `07_ROADMAP.md` §9 #14.** It is kept
+> because it records the intent, but it **cannot be implemented as written**, and
+> a future session that tries will lose a day to it. `ModelGateway` is not a type:
+> `lib/llm/gateway.ts` exports the free functions `stream` / `generate` /
+> `validate`. And `WorkflowContext` carries no credentials, no model name, no
+> `signal` and no assembled system prompt, so every step would have to reach into
+> Settings for them — precisely the coupling §12 exists to prevent. It also has no
+> error path: `stream()` never throws, so a failure arrives as a chunk that each
+> step would have to notice, and "preserve the output of steps that already ran"
+> is the rule that gets written in step 1 and forgotten in step 5.
+>
+> What shipped: a step declares a **label** and a **pure** `prompt(ctx)` function;
+> the engine owns the model call, the order, the failure, the abort and the
+> progress. Read `lib/workflow/types.ts` and `lib/workflow/engine.ts`. The model
+> call is **injected** (`StepCaller`) so the engine imports no runtime `lib/llm`
+> code — that is what makes F3–F6 checkable in Node with a scripted generator
+> (`scripts/verify-workflow.mts`) instead of by hand in a browser.
 
 Each step is one model call. The engine emits progress events so the UI can render:
 
@@ -573,7 +591,7 @@ export interface SafetyPolicy {
 
 | Policy | Applies to | Core requirement |
 |---|---|---|
-| `health-edu` | `fitness`, `hair` | Education and lifestyle only. No diagnosis, treatment, prescription, or promised outcome. Recommend professional advice on pain, injury, or serious symptoms. |
+| `health-edu` | `fitness` | Education and lifestyle only. No diagnosis, treatment, prescription, or promised outcome. Recommend professional advice on pain, injury, or serious symptoms. |
 | `crisis-escalation` | `mental` | Four tiers: Normal → Concern → High Risk → Escalation. On high risk, suspend normal companion behaviour, surface crisis resources, and encourage contacting a trusted person or emergency services. Never diagnose. Never claim to replace a psychologist. |
 | `financial-edu` | `finance` | Financial education only. No securities advice, no return guarantees, no principal guarantees. |
 | `minor-safety` | `parenting` | Age-appropriate content, data minimisation, no emotional dependency, no diagnosis of a child. |

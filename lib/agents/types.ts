@@ -8,6 +8,7 @@
  */
 
 import type { ToolId } from "@/lib/tools/types";
+import type { WorkflowId } from "@/lib/workflow/types";
 
 /**
  * Intent, not wire parameters — docs/02_TECH_SPEC.md §6.4.
@@ -105,8 +106,21 @@ export interface AgentConfig {
    * `lib/tools/types.ts`.
    */
   tools: readonly ToolId[];
-  /** Workflow ids from `lib/workflow/definitions/`. Empty when none. */
-  workflows: string[];
+  /**
+   * Workflow ids from `lib/workflow/definitions/`. Empty when none.
+   *
+   * Typed rather than `string[]`, the same way `tools` is and for the same
+   * reason: a config declaring a workflow that does not exist has to be a
+   * compile error rather than a rail that prints a slug. That defect was real —
+   * `office` and `fitness` both declared workflows that had never been written,
+   * nothing type-checked or validated the claim, and the right rail rendered
+   * 「工作流：office-meeting-summary」 to the user.
+   *
+   * The closed union means adding a workflow needs a rebuild. For a statically
+   * exported build with no runtime plugin surface that is the correct trade, but
+   * it is a decision rather than an accident — see `lib/workflow/registry.ts`.
+   */
+  workflows: readonly WorkflowId[];
   modelProfile: ModelProfileId;
   safetyPolicy: SafetyPolicyId;
   /** Empty-state chips in the workspace. Empty for disabled agents. */

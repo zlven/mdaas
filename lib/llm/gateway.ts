@@ -19,6 +19,7 @@ import { resolveProfile, type ProfileIntent } from "@/lib/llm/profiles";
 import type {
   ChatMessage,
   Credentials,
+  Effort,
   GenerateRequest,
   GenerateResult,
   ModelProvider,
@@ -71,6 +72,19 @@ export interface GenerateOptions {
   messages: ChatMessage[];
   /** Overrides the profile's limit. Rarely needed. */
   maxTokens?: number;
+  /**
+   * Overrides the profile's effort for this call.
+   *
+   * Only `lib/workflow/` passes it: `02_TECH_SPEC.md` §6.4.1 reserves high effort
+   * for workflow steps, and the flagship run is the one the user has explicitly
+   * agreed to wait for. A conversational turn never sets it, so it keeps whatever
+   * its agent's profile chose.
+   *
+   * This does not leak a wire parameter. `Effort` is an intent ladder, and §6
+   * exists to carry that intent from the profile to the adapter — the adapter
+   * still decides whether it becomes `output_config.effort` or is dropped.
+   */
+  effort?: Effort;
   signal?: AbortSignal;
 }
 
@@ -110,7 +124,7 @@ function buildRequest(opts: GenerateOptions): GenerateRequest {
     messages: opts.messages,
     temperature: profile.temperature,
     maxTokens: opts.maxTokens ?? profile.maxTokens,
-    effort: profile.effort,
+    effort: opts.effort ?? profile.effort,
     signal: opts.signal,
   };
 }

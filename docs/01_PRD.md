@@ -34,7 +34,7 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | # | Item |
 |---|---|
 | 1 | Landing page |
-| 2 | Agent grid — all 10 visible, 3 functional |
+| 2 | Agent grid — all 9 visible, 4 functional |
 | 3 | Agent workspace — chat, streaming, markdown |
 | 4 | BYOK settings — provider, key, model, verification |
 | 5 | Agent-scoped RAG, in-browser |
@@ -79,7 +79,7 @@ Four pages. No more.
 | Zone | Contents |
 |---|---|
 | Hero | Product name, one-line positioning, sub-line, primary CTA |
-| Agent matrix | Grid of all 10 agent cards |
+| Agent matrix | Grid of all 9 agent cards |
 | How it works | The five-step action chain from §1, compressed to four or five beats |
 | BYOK explainer | One short block: you bring your own model key, we never see it |
 | Footer | Repo, docs, disclosure that this is a demo |
@@ -88,9 +88,9 @@ Four pages. No more.
 
 ### 3.2 `/agents` — Expert directory
 
-All 10 agents. Cards for the three functional agents link to their workspace; the seven `Coming Soon` cards are visibly inert (no hover lift, no cursor change, no navigation).
+All 9 agents. Cards for the four functional agents link to their workspace; the five `Coming Soon` cards are visibly inert (no hover lift, no cursor change, no navigation).
 
-Filters are **not** in the MVP — ten cards fit on one screen.
+Filters are **not** in the MVP — nine cards fit on one screen.
 
 ### 3.3 `/agents/[id]` — Agent workspace
 
@@ -187,7 +187,7 @@ Requirements:
 - Accepted formats are `.pdf`, `.docx`, `.txt`, `.md`. Anything else is refused by name.
 - Parsing happens **in the browser**. The file is never uploaded anywhere. State this in the UI — it is a real privacy property and it is worth a line of copy.
 - Size ceiling 10 MiB, enforced client-side against the file's declared size **before it is read**, with a readable error.
-- Parsed text is injected into the prompt **in full** up to the inline budget, and only the remainder is chunked ( § `02_TECH_SPEC.md` §8.7) into the **session's** retrieval pool. Injection rather than retrieval-only is required by §8.3's "single structured call over an uploaded transcript" and by F5 — see §8.7 for why.
+- Parsed text is injected into the prompt **in full** up to the inline budget, and only the remainder is chunked ( § `02_TECH_SPEC.md` §8.7) into the **session's** retrieval pool. Injection rather than retrieval-only is required by §8.3's "single structured call over an uploaded transcript" and by F9 — see §8.7 for why.
 - When a file is longer than the budget, both the user and the model are told how much was read in. The agent must never present a partial read as a complete one.
 - Uploaded content is attributed to its filename in the prompt.
 - A parsing failure names the file and the reason. It never fails silently.
@@ -198,7 +198,7 @@ Requirements:
 
 ## 7. Agent-scoped RAG
 
-`office` retrieves only from `knowledge/office/`. `creator` only from `knowledge/creator/`. `fitness` only from `knowledge/fitness/`.
+`office` retrieves only from `knowledge/office/`. `creator` only from `knowledge/creator/`. `fitness` only from `knowledge/fitness/`. `study` only from `knowledge/study/`.
 
 **Never mix.** This is structurally enforced — the browser only ever downloads the selected agent's index (`02_TECH_SPEC.md` §4).
 
@@ -248,11 +248,15 @@ Single structured call over an uploaded transcript or pasted text.
 
 Output sections, in this order: **Summary · Key Decisions · Action Items · Owners · Deadlines · Risks · Follow-up questions.**
 
-Must not invent an owner or a deadline that is not present in the source. Where the source is silent, the section says so explicitly. This is acceptance criterion F5.
+Must not invent an owner or a deadline that is not present in the source. Where the source is silent, the section says so explicitly. This is acceptance criterion **F9** — not F5, which is "a failed stage shows an error and a retry". The two were confused because this sentence names no criterion of its own; `06_ACCEPTANCE.md` §F records the correction.
 
 ### 8.4 Fitness — Training Plan
 
-Single structured call, driven by a short intake: goal, training experience, weekly frequency, available equipment, session length, any constraints the user volunteers.
+Single structured call over whatever the user gives it — a question, a file, or both.
+
+**It gives a plan first.** The output opens with a plan that states the population it applies to (no known condition, no active injury) and names the two or three details that would narrow it — training experience, session length, equipment. It asks for those **after** producing something usable, never as a gate before it. Repeated questions the profile already answers are a defect (`04_AGENT_SPEC.md` §4.3, §6).
+
+**The safety screen is unchanged.** Pain, an active injury, pregnancy, or chronic disease still stops the planning answer and routes to a professional — that ordering moved, the boundary did not (`06_ACCEPTANCE.md` I3–I6).
 
 Output sections: **Goal · Weekly Schedule · Session Detail · Lifestyle Suggestions · Progress Tracking · Safety Notes.**
 
@@ -260,7 +264,7 @@ Output sections: **Goal · Weekly Schedule · Session Detail · Lifestyle Sugges
 
 ### 8.5 Not in the MVP
 
-The remaining seven agents' workflows. Do not build speculative workflow infrastructure for them.
+The five `Coming Soon` agents' workflows. Do not build speculative workflow infrastructure for them. (`study` ships functional with none — a workflow would have to be designed, not inferred, and nothing in the demo needs it.)
 
 ---
 

@@ -1,6 +1,7 @@
 import { tintOf } from "@/components/agent/tint";
 import type { AgentConfig } from "@/lib/agents/types";
 import { TOOL_DEFINITIONS } from "@/lib/tools/types";
+import { WORKFLOW_DEFINITIONS } from "@/lib/workflow/registry";
 
 /**
  * The workspace's two rails — docs/03_UI_UX_SPEC.md §5.
@@ -93,7 +94,18 @@ export function AgentFacts({
           <Fact label="工具">{agent.tools.map((id) => TOOL_DEFINITIONS[id].label).join(" · ")}</Fact>
         ) : null}
 
-        {agent.workflows.length > 0 ? <Fact label="工作流">{agent.workflows.join(" · ")}</Fact> : null}
+        {/* The same rule as `tools` directly above, which this line broke: the
+            array holds ids, so joining it prints 「工作流：office-meeting-summary」.
+            `Record<WorkflowId, WorkflowDefinition>` is total, so there is no
+            unresolvable case to fall back from.
+
+            An agent with no workflow renders nothing at all rather than saying
+            so — the rule this file already states for its other sections. Six
+            of the nine have none, and 「暂不支持」 on six cards would read as an
+            unfinished product rather than as nine different specialisms. */}
+        {agent.workflows.length > 0 ? (
+          <Fact label="工作流">{agent.workflows.map((id) => WORKFLOW_DEFINITIONS[id].label).join(" · ")}</Fact>
+        ) : null}
 
         {/* Not a `Fact`: it is the one section here the user operates rather
             than reads. It sits with the describing sections anyway, because

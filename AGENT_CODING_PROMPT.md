@@ -98,7 +98,7 @@ Prompts and knowledge are Chinese because the agents answer in Chinese; a Chines
 
 Run the checks in `docs/06_ACCEPTANCE.md`. The ones most often skipped and most often false:
 
-- **C4** — actually add a throwaway eleventh agent and confirm nothing outside `configs/` needs editing. Do not reason about it; run it.
+- **C4** — actually add a throwaway tenth agent and confirm nothing outside `configs/` needs editing. Do not reason about it; run it.
 - **E6** — confirm in the network panel that selecting one agent downloads only that agent's knowledge index.
 - **H4** — plant a real prompt injection in a knowledge file, rebuild, and query it. Reading the prompt is not a test.
 - **J2** — Chinese body text at `line-height: 1.7`. The single most common thing that makes a Chinese UI look unfinished.

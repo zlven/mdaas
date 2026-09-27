@@ -1,7 +1,7 @@
 /**
  * The agent registry — docs/02_TECH_SPEC.md §5
  *
- * This file is an array and a lookup. Nothing else. Adding agent #11 means
+ * This file is an array and a lookup. Nothing else. Adding agent #10 means
  * adding one `configs/<id>.ts` file plus one import and one array entry here —
  * no changes in `app/`, `lib/llm/`, or `lib/rag/`. That is acceptance C4, and it
  * is the single best proxy for whether this is actually configuration-driven or
@@ -20,7 +20,6 @@ import { career } from "@/lib/agents/configs/career";
 import { creator } from "@/lib/agents/configs/creator";
 import { finance } from "@/lib/agents/configs/finance";
 import { fitness } from "@/lib/agents/configs/fitness";
-import { hair } from "@/lib/agents/configs/hair";
 import { mental } from "@/lib/agents/configs/mental";
 import { office } from "@/lib/agents/configs/office";
 import { parenting } from "@/lib/agents/configs/parenting";
@@ -28,7 +27,7 @@ import { study } from "@/lib/agents/configs/study";
 import { style } from "@/lib/agents/configs/style";
 
 /**
- * Display order. The three that work come first, because the grid is the
+ * Display order. The four that work come first, because the grid is the
  * product argument (docs/03_UI_UX_SPEC.md §3) and a visitor should hit a
  * working agent before a "Coming Soon" card.
  */
@@ -36,10 +35,9 @@ const AGENTS: AgentConfig[] = [
   office,
   creator,
   fitness,
-  hair,
+  study,
   mental,
   finance,
-  study,
   style,
   career,
   parenting,

@@ -13,6 +13,8 @@
     "pretypecheck": "npm run build:assets",
     "typecheck": "tsc --noEmit",
     "verify:upload": "node --experimental-transform-types --no-warnings scripts/verify-upload.mts",
+    "preverify:workflow": "npm run build:assets",
+    "verify:workflow": "node --experimental-transform-types --no-warnings scripts/verify-workflow.mts",
     "build:assets": "node --experimental-strip-types --no-warnings scripts/build-assets.mts"
   },
   "dependencies": {

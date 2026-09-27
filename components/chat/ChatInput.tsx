@@ -5,8 +5,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { AttachmentChips } from "@/components/chat/AttachmentChips";
 import { Button } from "@/components/ui/Button";
+import { WorkflowControls } from "@/components/workflow/WorkflowControls";
 import { ACCEPTED_EXTENSIONS, ACCEPTED_LABEL } from "@/lib/files/limits";
 import { hasSendable, type Upload } from "@/lib/files/types";
+import type { WorkflowId } from "@/lib/workflow/types";
 
 /**
  * The chat input — docs/03_UI_UX_SPEC.md §6.
@@ -30,6 +32,13 @@ import { hasSendable, type Upload } from "@/lib/files/types";
  *     asking nothing is a complete message, and a grey button after a successful
  *     parse reads as the product rejecting the file. The turn then says
  *     「（见附件）」 rather than nothing, because a user turn cannot be empty.
+ *   - **⚡ reads the same predicate as Send.** A workflow's contract is "run this
+ *     expert's workflow on what is in the box", attachments included, so it is
+ *     gated by the same `outgoing()` rather than by a second rule that would
+ *     drift from it. The one difference is that `outgoing()` is refused while
+ *     busy, and `busy` there means a streamed answer *or* a workflow run: two
+ *     runs, or a run and an answer, would interleave their tokens into one
+ *     conversation.
  *
  * The chips sit **above** the textarea (§6), inside the same bordered container,
  * so an attachment reads as part of the message being composed rather than as a
@@ -60,18 +69,29 @@ const ATTACHMENT_ONLY = "（见附件）";
 
 export function ChatInput({
   ready,
-  streaming,
+  busy,
   uploads,
+  workflows,
   onSend,
+  onRunWorkflow,
   onStop,
   onAttach,
   onRemoveUpload,
 }: {
   /** False when no provider is configured. The input is shown, not hidden. */
   ready: boolean;
-  streaming: boolean;
+  /**
+   * A chat answer streaming, **or** a workflow run in flight. One flag because
+   * this row has one question to answer — "is the conversation already busy?" —
+   * and the two states give it the same answer: 发送 becomes 停止, and a second
+   * stream must not start beside the first.
+   */
+  busy: boolean;
   uploads: Upload[];
+  /** The agent's workflows — docs/01_PRD.md §8.1. Empty for six of the nine. */
+  workflows: readonly WorkflowId[];
   onSend: (text: string) => void;
+  onRunWorkflow: (id: WorkflowId, input: string) => void;
   onStop: () => void;
   onAttach: (files: File[]) => void;
   onRemoveUpload: (key: string) => void;
@@ -110,7 +130,7 @@ export function ChatInput({
    * a turn the button would have refused.
    */
   function outgoing(): string | null {
-    if (!ready || streaming) return null;
+    if (!ready || busy) return null;
     const text = value.trim();
     if (text !== "") return text;
     // A ready file with an empty box is a complete message (03_UI_UX_SPEC.md §6).
@@ -128,7 +148,35 @@ export function ChatInput({
     setValue("");
   }
 
+  /**
+   * ⚡ — the same hand-over as 发送, to a workflow instead of a chat turn.
+   *
+   * It clears the box for the same reason: the input's contents became the run's
+   * input, and leaving them behind would invite the user to send the same ask
+   * again as a chat turn on top of the run.
+   */
+  function startWorkflow(id: WorkflowId) {
+    const text = outgoing();
+    if (text === null) return;
+    onRunWorkflow(id, text);
+    setValue("");
+  }
+
   const canSend = outgoing() !== null;
+
+  /**
+   * Why the ⚡ controls are dead, or `null` when they are not.
+   *
+   * The ladder is ordered, and the order is the whole content: `busy` and 未配置
+   * both make `outgoing()` return `null`, so checking it first would blame the
+   * empty box for a problem the user would then go looking for in the wrong place.
+   */
+  function workflowBlocked(): string | null {
+    if (!ready) return "先在设置里填好 API Key";
+    if (busy) return "等这段回答结束";
+    if (outgoing() === null) return "先说说你想让这位专家做什么，或者附上一个文件";
+    return null;
+  }
 
   return (
     <form
@@ -164,10 +212,13 @@ export function ChatInput({
         className="w-full resize-none bg-transparent text-body text-ink placeholder:text-ink-subtle disabled:cursor-not-allowed"
       />
 
-      {/* The control row (§6). The workflow control that belongs beside the
-          attach control is still to come — see the note in Workspace. */}
+      {/* The control row (§6). */}
       <div className="mt-2 flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+        {/* `flex-wrap`: at 320px, 附件 plus a 「⚡ 30 天内容计划」 plus the privacy
+            line does not fit on one line, and `min-w-0` without wrapping clips
+            the privacy claim mid-sentence — a half-stated privacy claim is worse
+            than a two-line row. */}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
           {/* A button plus a visually hidden input: the button is the focus
               target, so the input must not be one (§11, J4). `sr-only` rather
               than `hidden`, because `display: none` makes the input unclickable
@@ -200,6 +251,8 @@ export function ChatInput({
             <span className="sr-only">（{ACCEPTED_LABEL}）</span>
           </button>
 
+          <WorkflowControls workflows={workflows} onRun={startWorkflow} blockedReason={workflowBlocked()} />
+
           {/* Wraps rather than truncates: on a phone this row is narrow enough
               that `truncate` would clip the privacy claim mid-sentence, and a
               half-stated privacy claim is worse than a taller row. */}
@@ -220,7 +273,7 @@ export function ChatInput({
           </p>
         </div>
 
-        {streaming ? (
+        {busy ? (
           <Button type="button" variant="secondary" size="sm" onClick={onStop}>
             停止
           </Button>

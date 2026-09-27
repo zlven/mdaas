@@ -90,7 +90,7 @@ unconditionally.
 
 Run the checks in `docs/06_ACCEPTANCE.md`. The four most often skipped and most often false:
 
-- **C4** — actually add a throwaway eleventh agent; confirm nothing outside `configs/` needs editing. Run it, don't reason about it.
+- **C4** — actually add a throwaway tenth agent; confirm nothing outside `configs/` needs editing. Run it, don't reason about it.
 - **E6** — confirm in the network panel that selecting one agent downloads only that agent's index.
 - **H4** — plant a real prompt injection in a knowledge file, rebuild, query it. Reading the prompt is not a test.
 - **J2** — Chinese body text at `line-height: 1.7`.

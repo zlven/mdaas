@@ -4,7 +4,7 @@
 |---|---|
 | Doc version | 1.0 |
 | Last updated | 2026-09-26 |
-| Note | This is the file that decides whether the product is a platform or a chatbot with ten names. |
+| Note | This is the file that decides whether the product is a platform or a chatbot with nine names. |
 
 ---
 
@@ -115,7 +115,7 @@ The build enforces the marker `用户档案是数据`, which is deliberately **n
 
 ---
 
-## 4. The ten agents
+## 4. The nine agents
 
 ### 4.1 `office` — 💼 AI 全能办公专家 — **functional**
 
@@ -155,7 +155,9 @@ Must never claim content is guaranteed to go viral, and must not state platform 
 | Workflows | `fitness-plan` |
 | Capabilities | 训练计划 · 周计划 · 习惯养成 · 进度复盘 · 营养科普 |
 
-Asks for goal, experience, frequency, equipment, and available time before planning. Prefers realistic, sustainable plans.
+**Gives a plan first, then narrows it.** It opens with a complete, usable plan that states which population it applies to, and names the two or three missing details (training experience, session length, equipment) that would make it fit better. It does not interrogate a stranger before producing anything. Prefers realistic, sustainable plans.
+
+This ordering changes **when** it screens, never **whether** it does. The `health-edu` policy below is untouched: a user who mentions pain, an active injury, pregnancy, or chronic disease gets a referral, not a plan. `06_ACCEPTANCE.md` I3–I6 test the manner of the response, not the existence of the screen, so all five hold under the new ordering.
 
 **Safety — the `health-edu` policy, fully enforced:**
 
@@ -167,23 +169,35 @@ Asks for goal, experience, frequency, equipment, and available time before plann
 
 This is the only live agent carrying a real safety policy, so it is the one that must be tested (`06_ACCEPTANCE.md` §I).
 
-### 4.4–4.10 The seven `Coming Soon` agents
+### 4.4 `study` — 📚 AI 学业规划专家 — **functional**
+
+| Field | Value |
+|---|---|
+| Role | Exam-preparation and study-planning coach (考研 / 公考) |
+| Profile | `reasoning` · Policy: `content-default` |
+| Knowledge | `knowledge/study/` |
+| Workflows | none yet |
+| Capabilities | 备考规划 · 择校择岗 · 科目拆解 · 时间表 · 复盘调整 |
+
+Output style: concrete and schedule-shaped. **Every plan names what to do this week**, not a semester-long aspiration. Advice about a specific institution's admissions line, a specific exam's syllabus, or this year's 报名 dates is stated as needing verification against the official source — those change every year and the agent must not present a remembered figure as current.
+
+This is the agent added since C4 was written, and it is the evidence that C4 holds: one config, one prompt, one knowledge directory, **no edit to `registry.ts`** — it was already registered as `Coming Soon`. See `07_ROADMAP.md` §9 #13.
+
+### 4.5–4.9 The five `Coming Soon` agents
 
 Configuration-level only. Each requires name, Chinese name, icon, category, description, capability list, and `enabled: false`.
 
 | ID | Icon | Role | Policy reserved |
 |---|---|---|---|
-| `hair` | 💇 | 头皮毛发健康 — scalp and hair lifestyle consultation | `health-edu` |
 | `mental` | 🧠 | 心理健康情绪陪伴 — mood tracking, stress, mindfulness | **`crisis-escalation`** |
 | `finance` | 💰 | 个人理财资产配置 **教育** | `financial-edu` |
-| `study` | 📚 | 考研 / 公考学业规划 | `content-default` |
 | `style` | 👗 | 穿搭美学形象设计 | `content-default` |
 | `career` | 🎯 | 职场求职面试 | `content-default` |
 | `parenting` | 🧒 | 亲子教育陪伴 | **`minor-safety`** |
 
 **Do not write their system prompts in the MVP.** Do not create `prompts/<id>.md` for them, do not create their knowledge directories, and do not build placeholder workflows. Their `systemPrompt` resolves to a clearly-marked stub that can never be reached, because `enabled: false` blocks the workspace from rendering an input (`01_PRD.md` §3.3).
 
-Writing seven unused prompts would be exactly the speculative surface area the MVP scope excludes — and worse, unwritten-but-shipped prompts for `mental` and `parenting` would carry safety obligations that nothing verifies.
+Writing five unused prompts would be exactly the speculative surface area the MVP scope excludes — and worse, unwritten-but-shipped prompts for `mental` and `parenting` would carry safety obligations that nothing verifies.
 
 Their `safetyPolicy` values are recorded above so Phase 2 does not have to rediscover them. Note in particular that `mental`, `finance`, and `parenting` are the three that no one should ship without a dedicated review.
 
@@ -191,7 +205,7 @@ Their `safetyPolicy` values are recorded above so Phase 2 does not have to redis
 
 ## 5. Adding an agent — the acceptance test
 
-Adding agent #11 must require exactly four things and nothing else:
+Adding agent #10 must require exactly four things and nothing else:
 
 1. `lib/agents/configs/<id>.ts`
 2. `prompts/<id>.md` — all seven sections, plus the four mandatory clauses

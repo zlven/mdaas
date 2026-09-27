@@ -2,7 +2,7 @@ import type { AgentConfig } from "@/lib/agents/types";
 import { NOT_IMPLEMENTED_PROMPT } from "@/lib/agents/stub-prompt";
 
 /**
- * Coming Soon — docs/04_AGENT_SPEC.md §4.4.
+ * Coming Soon — docs/04_AGENT_SPEC.md §4.5.
  *
  * One of the three that no one should ship without a dedicated review. The
  * `crisis-escalation` policy is recorded here so Phase 2 does not have to

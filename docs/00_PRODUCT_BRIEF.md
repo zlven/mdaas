@@ -86,30 +86,30 @@ If those five steps work, the project has crossed from "AI chat demo" to "Vertic
 
 ---
 
-## 4. The ten agents
+## 4. The nine agents
 
-The UI shows all ten. **Three are functional**; seven are visible but marked `Coming Soon`.
+The UI shows all nine. **Four are functional**; five are visible but marked `Coming Soon`.
 
 | # | ID | Name | Status |
 |---|---|---|---|
 | 1 | `office` | 💼 Office Productivity Expert | **Functional** |
 | 2 | `creator` | 📱 Creator Growth Expert | **Functional** |
 | 3 | `fitness` | 🏋 Fitness & Lifestyle Expert | **Functional** |
-| 4 | `hair` | 💇 Hair & Scalp Expert | Coming Soon |
+| 4 | `study` | 📚 Study Planning Expert | **Functional** |
 | 5 | `mental` | 🧠 Mental Wellness Expert | Coming Soon |
 | 6 | `finance` | 💰 Personal Finance Education Expert | Coming Soon |
-| 7 | `study` | 📚 Study Planning Expert | Coming Soon |
-| 8 | `style` | 👗 Style & Outfit Expert | Coming Soon |
-| 9 | `career` | 🎯 Career & Interview Expert | Coming Soon |
-| 10 | `parenting` | 🧒 Parenting Expert | Coming Soon |
+| 7 | `style` | 👗 Style & Outfit Expert | Coming Soon |
+| 8 | `career` | 🎯 Career & Interview Expert | Coming Soon |
+| 9 | `parenting` | 🧒 Parenting Expert | Coming Soon |
 
 **A `Coming Soon` agent must not open a chat that pretends to work.** It may show its description, capabilities, and a disabled state. See `AGENT_CODING_PROMPT.md` §7.
 
-### Why these three first
+### Why these four first
 
 - `office` — the B2B flagship; the clearest ROI story.
 - `creator` — carries the most impressive single workflow (30-day content plan).
 - `fitness` — the clearest consumer use case, and the one that exercises the safety-policy machinery (health disclaimers).
+- `study` — the largest single audience the four address, and the second one whose prompt carries a safety boundary of its own: sustained low mood or any self-harm signal stops the planning answer and hands off to a professional.
 
 ---
 
@@ -157,7 +157,8 @@ Each functional agent retrieves from **its own** knowledge namespace, and never 
 knowledge/
 ├── office/
 ├── creator/
-└── fitness/
+├── fitness/
+└── study/
 ```
 
 Retrieval happens **in the browser**, over knowledge shipped with the site as static assets. No vector database, no embedding API. `02_TECH_SPEC.md` §8 specifies the mechanism.
@@ -209,7 +210,7 @@ Full specification in `03_UI_UX_SPEC.md`.
 ## 10. Guiding principles
 
 1. **AI is not answering questions. AI is executing specialized work.** Every screen should reinforce this.
-2. **A configuration change should be able to add an agent.** Adding the 11th agent must not require editing runtime code.
+2. **A configuration change should be able to add an agent.** Adding the 10th agent must not require editing runtime code.
 3. **Do not fake functionality.** A button that does nothing is worse than no button. Mark it `Coming Soon` or remove it.
 4. **Never claim production readiness that has not been verified.**
 5. **Safety policies are product features, not disclaimers.** See §12.
@@ -234,9 +235,9 @@ Each artifact is written in the language of its consumer. This is deliberate, no
 
 ## 12. Safety and compliance — read before touching agent prompts
 
-Four of the ten domains (health, mental wellness, finance, minors) carry real regulatory and ethical constraints. These are not boilerplate:
+Four of the nine domains (health, mental wellness, finance, minors) carry real regulatory and ethical constraints. These are not boilerplate:
 
-- **Health agents** (`fitness`, `hair`): education and lifestyle guidance only. No diagnosis, no treatment, no prescriptions, no promised outcomes.
+- **Health agents** (`fitness`): education and lifestyle guidance only. No diagnosis, no treatment, no prescriptions, no promised outcomes.
 - **Mental wellness** (`mental`): requires a crisis-escalation policy with distinct risk tiers. Must never claim to replace a psychologist or doctor.
 - **Finance** (`finance`): financial *education*, never financial *advice*. No stock picks, no return guarantees.
 - **Minors** (`parenting`): age gating, data minimization, no emotional dependency, no AI-driven diagnosis of a child.
@@ -258,7 +259,7 @@ Before any public launch in mainland China, the service-registration question fo
 | `01_PRD.md` | Pages, features, workflows, MVP scope and non-goals |
 | `02_TECH_SPEC.md` | **Binding architecture.** Stack, BYOK, RAG, storage, migration path |
 | `03_UI_UX_SPEC.md` | Visual language, layouts, copy voice, accessibility |
-| `04_AGENT_SPEC.md` | The ten agents, and the rules for writing agent prompts |
+| `04_AGENT_SPEC.md` | The nine agents, and the rules for writing agent prompts |
 | `05_API_SPEC.md` | Provider adapter contract + optional proxy contract |
 | `06_ACCEPTANCE.md` | Definition of Done. Every item is testable. |
 | `07_ROADMAP.md` | What comes after the demo, and the trigger for each step |

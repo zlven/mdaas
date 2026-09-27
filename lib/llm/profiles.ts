@@ -2,7 +2,7 @@
  * Model profiles — docs/02_TECH_SPEC.md §6.4
  *
  * A profile expresses **intent**, and decouples agent config from concrete model
- * names so a provider swap does not require editing ten agent configs.
+ * names so a provider swap does not require editing nine agent configs.
  *
  * The values here are *not* a wire format. The adapter decides what actually
  * goes on the wire, because the parameters that control sampling differ per
@@ -31,7 +31,7 @@ export const PROFILE_INTENT: Record<ProfileIntent, ResolvedProfile> = {
   reasoning: { maxTokens: 16000, effort: "high", temperature: 0.3 },
   // creator, style — variety is the point.
   creative: { maxTokens: 16000, effort: "medium", temperature: 0.8 },
-  // fitness, hair, mental, parenting — conversational, and latency is felt.
+  // fitness, mental, parenting — conversational, and latency is felt.
   balanced: { maxTokens: 8000, effort: "medium", temperature: 0.6 },
 };
 

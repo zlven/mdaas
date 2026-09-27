@@ -128,7 +128,7 @@ AI SUPER EXPERT
 你的 AI 专家团队，
 覆盖工作与生活的每一个领域。
 
-10 位垂直领域专家。一个智能工作台。
+9 位垂直领域专家。一个智能工作台。
 
 [ 浏览专家 ]        [ 了解 BYOK ]
 ```
@@ -139,7 +139,7 @@ Then, immediately below:
 AI 专家矩阵
 ```
 
-and the grid of 10 cards.
+and the grid of 9 cards.
 
 Rules:
 

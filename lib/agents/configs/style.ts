@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@/lib/agents/types";
 import { NOT_IMPLEMENTED_PROMPT } from "@/lib/agents/stub-prompt";
 
-/** Coming Soon — docs/04_AGENT_SPEC.md §4.4. */
+/** Coming Soon — docs/04_AGENT_SPEC.md §4.5. */
 export const style: AgentConfig = {
   id: "style",
   name: "Style & Image Consultant",

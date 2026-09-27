@@ -23,7 +23,7 @@ import { listAgents } from "@/lib/agents/registry";
 const BEATS = [
   {
     title: "选专家",
-    body: "十位垂直领域专家，各自带着自己的知识库和回答方式。",
+    body: "九位垂直领域专家，各自带着自己的知识库和回答方式。",
   },
   {
     title: "给任务",
