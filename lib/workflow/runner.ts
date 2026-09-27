@@ -41,9 +41,10 @@ import { stream } from "@/lib/llm/gateway";
 import type { Credentials } from "@/lib/llm/types";
 import { composeSystemPrompt } from "@/lib/rag/context";
 import { loadAgentRetriever, type Retriever } from "@/lib/rag/retriever";
-import { uploadHits } from "@/lib/rag/uploads";
+import { documentHits } from "@/lib/rag/uploads";
 import type { ProviderSettings } from "@/lib/store/settings";
 import { profileSnapshot } from "@/lib/store/memory";
+import { savedDocuments } from "@/lib/store/library";
 import { commitRun, runSnapshot, setRunNotice } from "@/lib/store/workflow-runs";
 import { runWorkflow, type StepCall, type StepCaller } from "@/lib/workflow/engine";
 import { getWorkflow } from "@/lib/workflow/registry";
@@ -114,9 +115,20 @@ export async function driveRun(request: RunRequest): Promise<void> {
   const snapshot = profileSnapshot(agent.id);
   const profile = snapshot.status === "loading" ? [] : profileEntries(agent.profile, snapshot.fields);
 
+  // The 资料夹 is read here for the same reason and with the same timing: it is
+  // standing context the user opted into carrying, so it is a property of the run
+  // rather than of a step. Read once rather than per step also keeps the memo in
+  // `documentHits` effective across all seven steps of a long workflow.
+  const library = savedDocuments(agent.id);
+
   const systemFor = (step: WorkflowStep, ctx: StepContext): string => {
     const query = step.query?.(ctx) ?? `${ctx.input}\n${step.prompt(ctx)}`;
-    const hits = [...uploadHits(request.uploads, query), ...(retriever?.retrieve(query) ?? [])];
+    const hits = [
+      // Still per step, and still with the step's own query: the attachments are
+      // what this run is about, and `search()` normalises by length.
+      ...documentHits({ uploads: request.uploads, library, query }),
+      ...(retriever?.retrieve(query) ?? []),
+    ];
     return composeSystemPrompt(agent.systemPrompt, hits, profile);
   };
 

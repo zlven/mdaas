@@ -93,6 +93,9 @@ export async function prepareUpload(file: File, agentId: string, key: string): P
     ...base,
     status: {
       kind: "ready",
+      // The whole normalised text, kept so a 资料夹 save can re-split it at the
+      // folder's own budget. See the field's comment in `types.ts`.
+      text,
       chars: prepared.chars,
       inlineChars: prepared.inlineChars,
       truncated: prepared.truncated,

@@ -12,10 +12,10 @@ import { WORKFLOW_DEFINITIONS } from "@/lib/workflow/registry";
  * that pulls this file into the client bundle, which for two static blocks is the
  * cheaper side of the trade.
  *
- * Two of its sections are **slots** — `retrieval` and `profile` — because both
- * are client-rendered state that lives in `Workspace`. Passing them in keeps this
- * file free of `"use client"`, so the capability and knowledge lines stay in the
- * server component where they belong.
+ * Three of its sections are **slots** — `retrieval`, `profile` and `library` —
+ * because all three are client-rendered state that lives in `Workspace`. Passing
+ * them in keeps this file free of `"use client"`, so the capability and knowledge
+ * lines stay in the server component where they belong.
  */
 
 export function AgentIdentity({ agent }: { agent: AgentConfig }) {
@@ -71,10 +71,12 @@ export function AgentFacts({
   agent,
   retrieval,
   profile,
+  library,
 }: {
   agent: AgentConfig;
   retrieval: React.ReactNode;
   profile: React.ReactNode;
+  library: React.ReactNode;
 }) {
   return (
     <aside className="hidden w-72 shrink-0 lg:block">
@@ -114,6 +116,17 @@ export function AgentFacts({
             collapsible controls are all in the centre column; this is not one
             of them. */}
         {profile}
+
+        {/* The 资料夹 sits beside the profile for the same reason the profile sits
+            here at all: both are standing material the user opted to carry,
+            against `retrieval` below, which is what happened on this turn.
+
+            The order is the reference block's order, not a preference. Within
+            that block the folder is numbered ahead of the knowledge base
+            (`lib/rag/context.ts`), so the rail reads in the sequence the citations
+            do. The profile is not in that sequence — it is its own block, ahead of
+            the whole reference block — which is why it is above both. */}
+        {library}
 
         {retrieval}
       </div>

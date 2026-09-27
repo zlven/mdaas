@@ -28,6 +28,62 @@ export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export const INLINE_BUDGET_CHARS = 24_000;
 
 /**
+ * The same budget for one 资料夹 document (`lib/store/library.ts`), deliberately
+ * a third of `INLINE_BUDGET_CHARS`.
+ *
+ * **The two are different numbers because the two are paid differently.** A
+ * session attachment is a per-turn decision: the user attached it for this
+ * question, and it stops costing anything the moment the chip is removed. A
+ * folder document is inlined on *every* message until the user goes back and
+ * turns it off, so the same 24,000 would be a recurring charge they did not
+ * re-choose. Five documents at the session budget is 120,000 characters on every
+ * single turn; at this budget the worst case is 40,000.
+ *
+ * A document over this budget is not lost — the overflow goes into the folder's
+ * retrieval pool exactly as an attachment's does (§8.7), so the head is present
+ * and the rest is reachable. `truncated` and `inlineChars` carry the distinction
+ * to the panel.
+ */
+export const LIBRARY_INLINE_BUDGET_CHARS = 8_000;
+
+/**
+ * How many documents one agent's 资料夹 holds.
+ *
+ * A cap rather than unlimited, and it is a **cost** control before it is a UI
+ * one: every saved document is a standing per-message charge the user is opting
+ * into once, so the ceiling has to be low enough to read at a glance and to
+ * reason about in tokens. Five is also what the panel can render without
+ * scrolling on a laptop, which keeps "what am I paying for" answerable without
+ * opening anything.
+ *
+ * The refusal is a normal state, not an error — the add control stays visible
+ * and explains itself (`lib/llm/errors.ts` `LIBRARY_FULL`).
+ */
+export const MAX_LIBRARY_DOCUMENTS = 5;
+
+/**
+ * Whether one more document may be saved — a pure predicate over the list, so
+ * the rule is checkable from Node and the store stays free of the wording.
+ *
+ * Takes the list, not a count, so a caller cannot pass a number that disagrees
+ * with the list it is about. The limit comes back in the result rather than
+ * being read separately by the caller, because the message has to name it and a
+ * second read is a second chance to name the wrong one.
+ *
+ * `unknown[]` rather than `LibraryDocument[]` on purpose: the element type lives
+ * in `lib/files/library.ts`, which imports this file for the budget, and naming
+ * it here would close a cycle to express something this function never looks at.
+ * It reads `.length` and nothing else — which is also why the assertion that
+ * guards it can be written with plain objects.
+ */
+export function canAddDocument(
+  documents: readonly unknown[],
+): { ok: true } | { ok: false; limit: number } {
+  if (documents.length < MAX_LIBRARY_DOCUMENTS) return { ok: true };
+  return { ok: false, limit: MAX_LIBRARY_DOCUMENTS };
+}
+
+/**
  * Below this many extracted characters, a PDF is treated as image-only (E9).
  *
  * Not zero: a scanned PDF sometimes yields a stray page number or a header, and

@@ -26,6 +26,7 @@ export type ErrorCode =
   | "PROVIDER_ERROR"
   | "RETRIEVAL_FAILED"
   | "PARSE_FAILED"
+  | "LIBRARY_FULL"
   | "STORAGE_UNAVAILABLE"
   | "STORAGE_READ_FAILED"
   | "STORAGE_WRITE_FAILED"
@@ -83,14 +84,23 @@ const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
     "这个服务商账户的额度用完了。这是你自己账户上的限制，需要到服务商那边充值或调整额度。",
   MODEL_NOT_FOUND:
     "找不到这个模型。可能是名字写错了，或者你的账户没有开通它。请到设置里从模型列表中选一个。",
+  // Names both sources, because either can be the one that pushed it over and
+  // the user cannot tell from here which. A 资料夹 document is the likelier
+  // culprit when one is inlined — it rides on every message, so it may have been
+  // present for many turns before this one crossed the line.
   CONTEXT_TOO_LONG:
-    "这次的内容超出了模型的上下文长度。可以去掉一个附件，或者开一段新的对话。",
+    "这次的内容超出了模型的上下文长度。可以去掉一个附件、在资料夹里关掉一份每次都带上的文档，或者开一段新的对话。",
   CORS_BLOCKED:
     "服务商拒绝了这个网页发起的直接请求（CORS），这不是网络故障。可以在设置里配置转发代理，或者换一个允许浏览器直连的服务商。",
   NETWORK_UNAVAILABLE: "网络连接不上。检查一下网络，然后重试。",
   PROVIDER_ERROR: "服务商返回了错误。这通常是暂时的，稍后重试即可。",
   RETRIEVAL_FAILED: "知识库没能加载，这次的回答没有引用知识库。",
   PARSE_FAILED: "文件读不出来。",
+  // Its own code rather than a reuse of PARSE_FAILED: nothing failed to parse,
+  // and the file in question is already saved and working. The default message
+  // is a fallback — `libraryFullError` states the limit, which is the part that
+  // matters.
+  LIBRARY_FULL: "资料夹已经满了。",
   // Storage, not the provider. Neither of these is fixable from an error card,
   // so neither borrows a provider code: PROVIDER_ERROR would tell the user to
   // retry the provider, PARSE_FAILED talks about reading a file, and
@@ -121,6 +131,9 @@ const DEFAULT_REMEDY: Record<ErrorCode, Remedy | undefined> = {
   // repair from an error card, and the answer continues without knowledge.
   RETRIEVAL_FAILED: undefined,
   PARSE_FAILED: undefined,
+  // The remedy (delete one) is a control sitting next to the message, so a card
+  // action would be a second, worse route to the same place.
+  LIBRARY_FULL: undefined,
   // What has to change is a browser setting, and the message already says so.
   STORAGE_UNAVAILABLE: undefined,
   // The repair is a page reload, which is not a control we can put in a card.
@@ -200,6 +213,25 @@ export function fileNoTextError(name: string): AppError {
 export function fileUnreadableError(name: string, reason: string): AppError {
   return appError("PARSE_FAILED", reason, {
     message: `「${name}」读不出来。文件可能已经损坏，或者不是它扩展名所说的格式。`,
+  });
+}
+
+/**
+ * The 资料夹 is at its ceiling — `01_PRD.md` §9.
+ *
+ * Not really an error, and it is rendered as a state rather than as a failure:
+ * the add control stays visible and disabled with this text beneath it, so the
+ * cap is discoverable *before* the user picks a file. The message names the limit
+ * and the one action that resolves it, per §9's rule that every entry leaves the
+ * user something to do.
+ *
+ * `limit` is threaded in rather than imported from `lib/files/limits.ts`, so this
+ * module stays free of feature constants and cannot disagree with the store about
+ * which number the store is enforcing.
+ */
+export function libraryFullError(limit: number): AppError {
+  return appError("LIBRARY_FULL", `library at capacity (${limit})`, {
+    message: `资料夹最多放 ${limit} 份文档。想再存一份，先删掉其中一份。`,
   });
 }
 

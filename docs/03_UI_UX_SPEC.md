@@ -205,6 +205,10 @@ Three zones.
 │            │   │ assistant message    │     │   [          ]  │
 │            │   │ (streaming)          │     │   [ 清空档案 ]  │
 │            │   └──────────────────────┘     │   ────         │
+│            │                                │   资料夹 · 2/5  │
+│            │                                │   简历.pdf  ✕   │
+│            │                                │   ☑ 每次都带上  │
+│            │                                │   ────         │
 │            │                                │   本次检索       │
 │            │                                │   · chunk 1    │
 │            │                                │   · chunk 2    │
@@ -217,7 +221,7 @@ Three zones.
 |---|---|---|
 | Left rail | 240px | Icon, names, description, capability tags |
 | Centre | flexible | Conversation, max-width ~720px, centred |
-| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **the profile**, and what was retrieved this turn |
+| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **the profile**, **the 资料夹**, and what was retrieved this turn |
 
 Both rails collapse below `lg`. The **centre column never exceeds ~720px** — full-width prose on a 1440px monitor is unreadable.
 
@@ -268,6 +272,32 @@ Not a strip, and not in the centre column:
 - When the browser refuses storage, a **neutral**-coloured notice appears — not `--danger`. The user has done nothing wrong, and a permanently-red banner teaches people to ignore red.
 - **补充说明 is a plain `<textarea>`, and it is the one profile control that is not a config field.** Every other field is declared by the agent and rendered as a form; this one is a free-text block every agent gets, under a label we author (`04_AGENT_SPEC.md` §6). It is multi-line by design, which is why its writes do not go through the same path as a declared field — see the note in `lib/store/memory.ts`.
 - When the profile is empty and there is no conversation yet, the empty state gains one line above the suggested prompts inviting the user to fill it in. This is the product's onboarding moment, not chrome. That line stays in the **centre column**, because it is about the absence of a conversation rather than part of the form.
+
+### The 资料夹 — right rail, directly under the profile
+
+```
+│   ────                                         │
+│   资料夹 · 已存 2 / 5 篇                         │
+│   会议纪要.pdf                            ✕     │
+│   8,412 字符                                    │
+│   ☑ 每次都带上                                  │
+│   预算表.md                               ✕     │
+│   31,208 字符（前 8,000 已读入，其余可检索）     │
+│   ☑ 每次都带上                                  │
+│   每次发消息会带上 2 篇，共 12,800 字            │
+│   （按你自己的 Key 计费）。                      │
+│   📎 添加文档                                   │
+│   资料夹保存在这个浏览器里，不跨设备同步。…      │
+```
+
+- **It sits under the profile, not above it.** Both are standing context the user opted to carry; the profile is injected first in every request (`lib/rag/context.ts`), and the rail reads in the order the request does. 本次检索 stays last: it is the only per-turn section.
+- **The shape is `AttachmentChips`, not a file manager.** Same name, same character sentence, same ✕, one row taller for the toggle. A saved document *is* an attachment with a longer life, and it should not look like a different kind of object. The count comes from the store's own selectors, never re-measured in the view.
+- **The toggle is a native `<input type="checkbox">`.** It is a state the user owns, and the native control brings the checked-state announcement, Space to toggle, and the right role for free — the reason `Disclosure` is built on `<details>`. The document's name goes inside the `<label>` in an `sr-only` span, because five checkboxes labelled only 「每次都带上」 are five labels that identify nothing.
+- **The cost line is exact and unhedged** — no 约, no "大概". The user is paying for it with their own key, and the number is a sum of what is actually injected, so an approximate one would be strictly worse than the real one. When nothing is included the line says what that means instead: they are still saved, and still retrieved on demand.
+- **The cap is stated, not discovered.** At five, 添加文档 stays **visible and disabled** with the reason as a `title` *and* as one line of visible text — a hard product cap is not a transient busy state, so it earns the extra line, and a `title` is unreachable on a phone. The copy names the action (delete one first), not the limit alone.
+- **删除 is two-step**, mirroring 清空档案 — 确认删除 in `--danger` plus 取消 — and it deletes one document. There is deliberately no 清空资料夹: five slots make per-document deletion enough, and "delete everything" is a product decision that should not arrive as a side effect.
+- **Its footer is the honest durability statement**, and the strongest one this product can make: stored in this browser, not synced across devices, lost to 清除站点数据, private mode, or eviction. It never says 永久保存, 不会丢失 or 已备份.
+- **Below `lg` it repeats as a collapsed strip in the centre column**, like the profile and for the same reason, with the same `idPrefix` obligation — both copies are in the DOM at once, and a shared id makes clicking a label flip the hidden checkbox instead of the visible one.
 
 ### Collapsed rows
 
@@ -377,11 +407,15 @@ Prominent, and it grows with content up to about six lines.
   | ready, fits | `文件名 · 8,412 字符` |
   | ready, truncated | `文件名 · 31,208 字符（前 24,000 已读入，其余可检索）` |
   | failed | `文件名 · <the reason>` in `--danger` |
+  | ready (extra control) | `… 存到资料夹` |
 
 - **A refusal is shown on the chip, not in a dialog and not in the conversation's error card.** The failure belongs to one file, and two files can fail for two different reasons in the same turn. A failed chip keeps its remove control so the reason stays readable until the user clears it.
+- **存到资料夹 appears on a `ready` chip only** — a file still being read has no text to save and a failed one has none at all — and only while the 资料夹 can be written to. It is a `<button type="button">`, and that is load-bearing rather than tidy: the chips render inside `ChatInput`'s `<form>`, where a button with no `type` defaults to `submit` and would send the message.
+- **Saving removes the chip.** The document has moved from this turn's material to standing material, and its head is injected on every message including this one — leaving the attachment in place would put the same text in the reference block twice, at the user's expense, in a block whose entries are numbered. The chip vanishing *is* the feedback; the panel it moved into is beside it. On a refusal the chip **stays**, carrying its parsed text, so the same click works once a slot is free. There is deliberately no 「已存入」 badge: it would be a second source of truth about the folder, and it would be wrong the moment the document was deleted from the panel.
 - The refusal for an oversized file happens against the declared size, before anything is read, so it is immediate even for a very large file.
 - **The privacy line is required, not optional** (`01_PRD.md` §6). It occupies the same row as the no-key hint and replaces it once a key exists: `文件只在你的浏览器里解析，不会上传。`
-- Uploads persist across turns for the whole session — that is what makes a follow-up question about the same document work — and are dropped when a new conversation is started.
+- Uploads persist across turns for the whole session — that is what makes a follow-up question about the same document work — and are dropped when a new conversation is started or the page is reloaded. **The 资料夹 is the exception and the only one**: a document saved there survives both, deliberately (`04_AGENT_SPEC.md` §8). 清空对话 clears the transcript and the chips; it does not touch the folder.
+- A 资料夹 refusal — a full folder, or a store that cannot be written — appears as a neutral `Notice` directly **above the message box**, because that is where the click was made (the chip row and the panel's add control are both there) and because below `lg` the rail that holds the folder is collapsed.
 - Drag-and-drop is deliberately **not** specified. It is not in `01_PRD.md` §6's scope, and anything outside the in-scope list is a defect (`01_PRD.md` §2).
 
 ---

@@ -8,7 +8,7 @@
 
 Criteria are numbered `A1 … K4`. An ID is referenced from other documents; keep the IDs stable when editing.
 
-**The MVP is done when A–K all pass.** Partial credit does not exist for a demo whose purpose is to be shown to strangers.
+**The MVP is done when A–L all pass.** Partial credit does not exist for a demo whose purpose is to be shown to strangers.
 
 ---
 
@@ -107,8 +107,11 @@ Upload parsing is deliberately split so that its logic is testable in Node, and 
 | Text encoding: UTF-8 BOM, UTF-16LE BOM, GBK and GBK-with-a-bad-byte | That no request carries file contents (E8/I1) |
 | The reference block's marker count under a planted injection, in both a file's **text** and its **filename** (H5) | A real poisoned document end to end (H5) |
 | The four refusal messages: `PARSE_FAILED`, `remedy: undefined`, the filename in the message | The privacy line's presence and the chip copy (§6) |
+| The 资料夹's derivation and the whole `documentHits` contract (§L) | Everything in §L that touches the store, the panel, or a second page load |
 
 The left column is a set of pure functions under `lib/files/`; the right column needs a browser and a real file, and no amount of the left column substitutes for it.
+
+**One thing in §L cannot be asserted anywhere, and it is worth naming.** That `lib/files/parse.ts` populates `ready.text` is enforced by the *type*: the field is required on the `ready` variant, so a parser that stopped filling it fails `npm run typecheck` and `npm run build`. A runtime assertion would be a check that cannot fail — the same shape as the marker-string trap `CLAUDE.md` records twice. Coverage here is the compile error, and deleting the assertion instead of the code would look like coverage.
 
 ---
 
@@ -197,6 +200,37 @@ F9 is here because the promise was already being made by two documents and check
 
 I3–I6 are the safety tests that have been built against an agent whose behaviour was exercised during development. Nothing in the runtime reads `AgentConfig.safetyPolicy`; there is no policy engine and no automated check behind any of these (`02_TECH_SPEC.md` §13). **Every criterion in this section is a human check, and an unrun one is not a pass.**
 
+**Two clauses added to I-rows rather than new numbers**, because they are the same requirement applied to one more store: **I10** — the 资料夹 is isolated the same way, so save a document to `fitness`, open `office`, and confirm its folder is empty and that IndexedDB holds two separate keys (`mdaas.library`, one record per agent id). **I12** — a *document* is injected material too: plant an injection in a saved document's text **and in its filename**, and the half that needs no model is the reference block's marker count in `scripts/verify-upload.mts`.
+
+---
+
+## L. 资料夹 (the per-expert document folder)
+
+It sits here, after I and before J, because it is the same subject as I: a store, its isolation, and what it may be injected into. J and K are the general interface and handoff sections.
+
+Every item below needs a browser and a real file. The pure half — the derivation, the cap, the ordering, the toggle's effect on the reference block, and the schema gate — is asserted in `npm run verify:upload` and is listed in §E's table.
+
+| # | Criterion | How to verify |
+|---|---|---|
+| L1 | A document saved to the folder is inlined on a **later message with no further action** | attach a file, 存到资料夹, send a message, then send a *second* one that only makes sense with the file in context. The 本次检索 panel lists it on both turns |
+| L2 | **The folder survives 清空对话 and a reload** | save a document, 清空对话, confirm the folder still lists it; then reload the page and confirm it is still there and still inlined |
+| L3 | Turning 「每次都带上」 off removes it from the request but **not** from reach | toggle it off, send a message: the document is no longer among the injected hits, but a question whose answer is in its *opening* still gets a grounded answer — the head is still searched (`lib/rag/uploads.ts`) |
+| L4 | A sixth document is refused, and the message names the action | save five, then try a sixth: the message says the folder is full **and** that one has to be deleted first; the parsed file is not lost |
+| L5 | Deleting is two-step, and removes exactly one document | click ✕, then 取消 — nothing is deleted. Click ✕ then 确认删除: that document is gone from the panel and from the next request, and the other four are untouched |
+| L6 | The cost line tracks the toggle | with three documents included, the line reads 3 and a character total equal to the sum of their 已读入 counts; toggle one off and both numbers drop on the same tick |
+| L7 | **No agent reads another agent's folder** | save a document to `fitness`, open `office`: empty folder, and two separate records in IndexedDB (see I10) |
+| L8 | With storage blocked, the folder is session-only **and says so** | block site data in devtools: the notice appears, the panel still works for the session, and the add control is not offered |
+| L9 | **Injection through a saved document fails** | plant an injection in a document's text and again in its filename, save it, and send a message — the agent treats it as data. Rebuild first if the file came from `knowledge/` |
+| L10 | **Only text is stored** | after saving, inspect the IndexedDB record: it holds chunk text and metadata, no `Blob`, no bytes, and no field carrying the original file. No request in the Network panel carries the file |
+| L11 | Persistence was requested | `navigator.storage.persisted()` may be false on a first visit and that is **not** a failure — Chrome grants it later. What must hold is that `navigator.storage.persist()` was called (Network/console instrumentation), and that the panel says the honest thing regardless of its answer |
+| L12 | Below `lg`, clicking a toggle's label flips the visible checkbox | narrow to 375px, open the 资料夹 strip, click the words 「每次都带上」: the checkbox beside them changes. If the rail's copy and the strip's share an element id, this does nothing |
+
+**L2 is the feature.** Everything else is the cost of it: an expert that forgets the document the moment the conversation is cleared has not remembered anything, and 清空对话 is the button a user presses precisely when they want a clean slate.
+
+**L3's second half is the one that passes for the wrong reason if written carelessly.** "It is still retrievable" is only evidence if the question's answer sits in the first 8,000 characters *and nowhere in the tail* — otherwise the tail's own search explains the hit and the toggle's real behaviour is untested.
+
+**L11 is a check on a call, not on an answer.** `persist()` returning `false` is the normal first-visit result, and treating it as a failure would push a later reader to "fix" it by surfacing a warning that is false for most users (`02_TECH_SPEC.md` §9).
+
 ---
 
 ## J. Interface quality
@@ -224,7 +258,7 @@ I3–I6 are the safety tests that have been built against an agent whose behavio
 |---|---|---|
 | K1 | `README.md` explains setup, configuration, and deployment in Chinese | read it |
 | K2 | `AGENT_CODING_PROMPT.md` lets a fresh coding agent start work without reading the whole `docs/` tree | give it to a fresh session |
-| K3 | `DEMO_SCRIPT.md` walks through six demonstrable scenarios end to end | follow it |
+| K3 | `DEMO_SCRIPT.md` walks through seven demonstrable scenarios end to end | follow it |
 | K4 | Document precedence is unambiguous, so no future agent builds the server architecture from `project_plan/` | read `00_PRODUCT_BRIEF.md` §0 |
 
 K4 exists because the repository contains a detailed SRS specifying FastAPI, PostgreSQL, pgvector, and server-side key storage (`project_plan/软件规格说明书.md` §9.2). A coding agent that reads it without reading `00_PRODUCT_BRIEF.md` §0 will build it, and building it is a defect — it violates C1 and would make the project cost money to run.
@@ -235,12 +269,14 @@ K4 exists because the repository contains a detailed SRS specifying FastAPI, Pos
 
 The MVP ships when:
 
-1. A–K all pass, each verified by running its check.
+1. A–L all pass, each verified by running its check.
 2. A person who has never seen the project can go from the landing page to a useful agent answer in **under three minutes**, supplying only their own API key.
 3. Deploying costs ¥0 and requires no server.
 4. The ten-agent test (C4) has been run, not reasoned about.
 5. The prompt-injection tests (H4/H5/I12) have been run with a real planted injection.
 6. A real PDF and a real DOCX have been parsed in a browser, with the pdf.js worker confirmed loaded rather than faked (E8).
+
+**Run state, as of the 资料夹 landing.** C4 was re-run then, because the folder is a new per-agent surface and C4 is the claim it could falsify: a throwaway tenth agent was added (config + prompt + knowledge), built, and confirmed to render the 资料夹 panel — both instances, rail and strip — on its generated `/agents/<id>` page, with **nothing outside `configs/` and the registry's two lines edited**, then removed. That is the build-time half only: the exported HTML is the `loading` state, so what it proves is that the panel is mounted for any agent, not that it works. **The whole L section is unrun** — every item needs a browser, a real key and a file, and none of them has had one.
 
 ---
 

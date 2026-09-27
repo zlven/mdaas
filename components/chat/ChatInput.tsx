@@ -77,6 +77,7 @@ export function ChatInput({
   onStop,
   onAttach,
   onRemoveUpload,
+  onSaveToLibrary,
 }: {
   /** False when no provider is configured. The input is shown, not hidden. */
   ready: boolean;
@@ -95,6 +96,13 @@ export function ChatInput({
   onStop: () => void;
   onAttach: (files: File[]) => void;
   onRemoveUpload: (key: string) => void;
+  /**
+   * Moves one parsed attachment into the 资料夹, or `null` when that store cannot
+   * be written to. Passed straight through to the chips, which render the control
+   * — this component never looks at it, and deliberately: the message box has no
+   * opinion about where a file is kept afterwards.
+   */
+  onSaveToLibrary: ((upload: Upload) => void) | null;
 }) {
   const [value, setValue] = useState("");
   const [coarse, setCoarse] = useState(false);
@@ -190,7 +198,7 @@ export function ChatInput({
         给这位专家发消息
       </label>
 
-      <AttachmentChips uploads={uploads} onRemove={onRemoveUpload} />
+      <AttachmentChips uploads={uploads} onRemove={onRemoveUpload} onSave={onSaveToLibrary} />
 
       <textarea
         id="chat-input"

@@ -46,6 +46,7 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | 11 | Error and empty states throughout |
 | 12 | Per-agent profile — structured fields the **config** declares, plus one free-text 补充说明 the user writes, stored in this browser (`04_AGENT_SPEC.md` §6) |
 | 13 | Per-agent instant tools — small client-side utilities usable without a conversation (`04_AGENT_SPEC.md` §7) |
+| 14 | Per-agent 资料夹 — up to 5 documents the user saves from an attachment, kept in this browser and **independent of 清空对话**, each with its own 「每次都带上」 toggle (`04_AGENT_SPEC.md` §8) |
 
 ### Explicitly out of scope
 
@@ -107,6 +108,9 @@ Filters are **not** in the MVP — nine cards fit on one screen.
 │  tags        │      Conversation            │ 我的档案      │
 │              │                              │ 身高(cm)[175]│
 │              │                              │ ──────────── │
+│              │                              │  资料夹 2/5  │
+│              │                              │ ☑每次都带上  │
+│              │                              │ ──────────── │
 │              │                              │  本次检索     │
 ├──────────────┴──────────────────────────────┴──────────────┤
 │ [📎 Attach] [⚡ Workflow]                     [Send →]      │
@@ -119,6 +123,8 @@ Right rail collapses below `lg`. Below `md`, chat takes the full viewport and th
 
 - The **tools** are operations, and an operation belongs where the work happens. They also hold *drafts* — a half-filled 会议成本 is component state, not stored state — so they must exist exactly once in the DOM, and the centre column is the only zone present at every breakpoint.
 - The **profile** is not an operation. It is standing facts about the user, alongside what the agent can do and what it knows — all of which describe this conversation's context and none of which the user operates. It is stored state read straight from the store, with no draft, so it *can* exist twice; below `lg`, where the rail is gone, it falls back to a collapsed strip in the centre column so it stays reachable at every width (`03_UI_UX_SPEC.md` §5).
+
+**The 资料夹 is the third thing in the rail, and it is neither of those two.** It is the user's own material kept for later — standing context like the profile, but *content* like an attachment, and it is the one section there the user adds files to. Its full contract is `04_AGENT_SPEC.md` §8; the two rules worth stating here are that it outlives 清空对话 by design, and that the 「每次都带上」 toggle is a cost control rather than a preference, because the user pays for every message with their own key.
 
 The tools strip is one line tall however many tools an agent declares; the selected tool's panel opens below it.
 
@@ -192,7 +198,7 @@ Requirements:
 - Uploaded content is attributed to its filename in the prompt.
 - A parsing failure names the file and the reason. It never fails silently.
 - An attached file is a complete message on its own: with a ready file in the box, Send works even if the user typed nothing, and the turn is sent as 「（见附件）」. Requiring a sentence would make handing over a document and asking 「看看这个」 two steps instead of one.
-- Files are not persisted to the knowledge base.
+- Files are not persisted to the knowledge base. A file may be **saved to the 资料夹** (§8 of `04_AGENT_SPEC.md`), which is the browser's own storage and not the knowledge base: what is kept is the parsed text, never the original bytes, and the corpus an agent ships with is never written to.
 
 ---
 
@@ -287,6 +293,7 @@ Every state below must have a designed, Chinese-language, actionable message. No
 | Empty response | Say the model returned nothing; offer retry |
 | Stream interrupted | Preserve partial output; offer continue / retry |
 | Storage unavailable | Continue session-only, with a visible notice |
+| 资料夹已满 (5 documents) | Say the folder is full and that one has to be deleted first — the message names the action, not the limit alone |
 
 A raw stack trace, a provider's JSON error body, or an English SDK error string must never reach the user.
 

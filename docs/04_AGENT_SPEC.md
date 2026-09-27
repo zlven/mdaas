@@ -285,3 +285,19 @@ An unknown id is closed off **by the type, in both directions**: `tools` is `rea
 **A tool ends in a conversation.** Every tool panel offers 「把结果发给专家」, which sends its result into the workspace as a user turn. A tool that dead-ends is a calculator with our branding on it.
 
 **Placement.** Tools render in the workspace's centre column (`01_PRD.md` §3.3, `03_UI_UX_SPEC.md` §5). They hold *drafts* — a half-filled 会议成本 is component state — so they are mounted exactly once, and the centre column is the only zone present at every breakpoint. The right rail lists tool *names* as part of describing the agent; it does not host the controls. The profile is not a tool and does not share this position: it sits in the right rail, and §6 says why that is safe.
+
+---
+
+## 8. 资料夹 — the documents the user keeps
+
+The third kind of per-agent state, and the one that is **not config-declared**. Every expert carries a 资料夹, exactly as every expert carries 补充说明; there is nothing for a config to declare, because a folder is a place to put the user's own files, not a shape the agent defines. The five-document cap and the 8,000-character budget are constants in `lib/files/limits.ts` for every agent.
+
+It is per-agent and isolated the way knowledge and the profile are: `lib/store/library.ts` has exactly one read, keyed by agent id, with no unfiltered read and no cursor, so reading another agent's folder means *adding* a visibly reviewable call (`06_ACCEPTANCE.md` I10). A document saved to `fitness` is invisible to `career`, and the acceptance check is the network/source-level one, not a convention.
+
+**It is independent of 清空对话, and that is the point of the feature.** 清空对话 deletes the transcript; it does not touch the folder, and nothing in that code path may grow a call to a `clearLibrary` — which is why that function does not exist. Deleting a document is always an explicit action on one document. The user asked for an expert that remembers them across a reload, and a folder that the neighbouring button silently emptied would fail at exactly that.
+
+**What it holds, and what it does not.** The parsed text of an uploaded file — never the original bytes, never a copy of the knowledge corpus, and never anything the model wrote. No automatic extraction: a document is in the folder because the user saved it there. It is *content*, like an attachment, which is why it is injected rather than recalled (`02_TECH_SPEC.md` §8.7), and it is *standing*, like the profile, which is why it is per-agent and read once at send time.
+
+**The toggle is a cost control.** Each document carries 「每次都带上」, on by default, because every message the folder is inlined into is paid for with the user's own key. Off keeps the document saved and reachable. The UI states the per-message cost in exact characters, so the toggle is an informed choice rather than a mystery.
+
+**Degradation and honesty.** The folder is browser storage, so it degrades the way the profile does — session-only with a visible notice when storage is refused — with one difference: a store that opens but cannot be *read* is shown locked rather than written over, because a saved document is typically the only copy in existence (`02_TECH_SPEC.md` §9). The durability claim is bounded in as many words: it survives 清空对话, reloads and restarts; eviction and 清除站点数据 end it. Nothing promises 永久保存.

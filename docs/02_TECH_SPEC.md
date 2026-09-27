@@ -448,9 +448,29 @@ Text beyond `INLINE_BUDGET_CHARS` is chunked and merged into the **session's** r
 - `source` = the **filename** — this is the attribution `formatContext` renders and the model cites. (Not the literal string `"upload"`: `Chunk.source` is a single field and `formatContext` prints it as the citation line, so the filename is what belongs there. Upload-ness is evident from the extension and the absence of a `knowledge/` prefix.)
 - `heading` = the filename, or `续 i/n` for chunks cut from the tail,
 - never persisted to the knowledge index,
-- dropped when the session ends.
+- dropped when the session ends — **unless the user saves the document to the 资料夹**, which is the one way an upload outlives the session. It is still not persisted to the knowledge index; see below.
 
 The chunker is **not** `chunkKnowledgeFile`. That one requires YAML frontmatter and `## ` headings, and a raw transcript has neither. Uploads use the same `Chunk` shape and the same size band (`SECTION_MIN`/`SECTION_MAX`), but split on blank lines instead.
+
+#### The 资料夹 — a saved document, and why it is a separate budget
+
+The **资料夹** (`lib/files/library.ts`, `lib/store/library.ts`) keeps up to `MAX_LIBRARY_DOCUMENTS` = 5 documents per agent id, across sessions, in the browser. It is the feature that makes 「这位专家记得我」 true across a reload, and it is deliberately the smallest possible version of one:
+
+| | Attachment | 资料夹 document |
+|---|---|---|
+| Lifetime | This session | Until the user deletes it or the browser evicts it |
+| Budget | `INLINE_BUDGET_CHARS` = 24,000 | `LIBRARY_INLINE_BUDGET_CHARS` = **8,000** |
+| Paid | Once, on the turn it is attached | **On every message**, until the toggle is off |
+| Cap | None (session state) | 5 per agent |
+| Stored | Nowhere | The parsed text, in `IndexedDB` |
+
+**The smaller budget is the whole reason this is a separate feature rather than a saved attachment.** A session attachment is a one-turn decision by a user who is looking at the file; a folder entry is a cost the user pays on every message from then on, with their own key. 5 × 8,000 = **40,000 non-whitespace characters is the worst case per message**, and that number is a product decision, not an implementation detail.
+
+**Text only — the original bytes are never stored.** The folder is a record of parsed text, exactly like the prompt it feeds; there is no file to re-download and nothing to serve. The parsed text is also why the record stores the *derived* 8,000-character split rather than the source (`lib/files/library.ts`): re-deriving it per message would re-run the chunker over every document on the main thread, on every turn and every workflow step, and `§9` already prescribes the answer for a record written at another budget — discard, do not migrate.
+
+**The toggle is a cost control, not a preference.** Each document has a 「每次都带上」 checkbox, on by default. Off means the document stays saved and stays reachable, and this is the sharper half of the inline-over-retrieve argument above: retrieval cannot promise that a document *will* be in front of the model, so a document that must be present has to be injected. Off trades presence for cost. It does **not** trade availability: an excluded document's head is still merged into the retrieval pool (`lib/rag/uploads.ts`), because a document whose first 8,000 characters were reachable by no path at all — never injected, never indexed — is precisely the "present but not retrieved" hole this section exists to close.
+
+**The injection path is unchanged.** A saved document's head is an injected chunk with `score: 0` and its tail joins the session's retrieval pool, both through the same `formatContext` → `composeSystemPrompt` boundary as an attachment. So the folder adds **no new prompt clause, no new marker pair and no new injection surface**: uploaded text was already untrusted, and a filename was already neutralised as the attribution line (§8.6).
 
 #### The worker and cMaps ship as static assets
 
@@ -474,13 +494,24 @@ If retrieval returns nothing, the model must be told so explicitly rather than b
 | API key | `localStorage` / `sessionStorage` | §7 |
 | Conversations and messages | `IndexedDB` | Can exceed the ~5 MB `localStorage` ceiling |
 | Long-term user memory (the per-agent profile) | `IndexedDB` | Same. One record per agent id, each a `Record<string, string>` — the declared fields plus one reserved `notes` key (`04_AGENT_SPEC.md` §6). The reserved key is an ordinary entry in that map, so the record's shape and its `schemaVersion` are unchanged. |
+| 资料夹 documents (`04_AGENT_SPEC.md` §8) | `IndexedDB` | Same ceiling. One record per agent id holding that agent's whole list of documents — a per-document key would need a cursor to enumerate, which is the primitive the isolation rule (§8.7, `06_ACCEPTANCE.md` I10) forbids, and it would let a partial write leave a document without the toggle that governs its cost. |
 | Cached knowledge indices | In-memory only | Re-fetched per session; they are static assets and HTTP-cache well |
 
 `lib/store/` exposes typed accessors behind a small interface so that §12's migration is a swap of implementations, not a hunt for call sites.
 
 Every read and write must be wrapped in `try/catch`. `localStorage` and `IndexedDB` can throw or come back empty in private windows, with blocked site data, and in previews. **The app must remain usable when storage is unavailable** — degraded to session-only, with a visible notice.
 
+The 资料夹 draws one distinction inside that rule, because it holds the only data in this product that exists nowhere else. A store that fails to *open* means nothing was ever persisted, so the folder is session-only and still editable. A store that opens but fails to *read* means documents may exist that we have never seen — so the folder is shown and **locked** rather than written over. A transcript is a byproduct and a profile is a few fields the user can retype; a saved document is the user's own material, and overwriting it unseen is the one outcome this store must not have.
+
 Storage versioning: keep a `schemaVersion` key; on mismatch, discard rather than attempt migration. This is a demo.
+
+#### Durability, and what may not be promised
+
+IndexedDB is not durable storage, and the 资料夹 is the first feature in this product that asks a user to rely on it. So `lib/store/library.ts` calls `navigator.storage.persist()` **once per session**, which asks the browser to exempt this origin from eviction under storage pressure.
+
+**The result is deliberately not surfaced.** Chrome returns `false` on a first visit even while storing everything normally — the request is evaluated against engagement heuristics and granted later — so a notice reading "your browser declined" would be false, alarming, and about a condition the user cannot change. Firefox and Safari either grant silently or do not implement it.
+
+The honest statement therefore does not depend on that answer, and is unconditional in the panel footer: the folder survives 清空对话, reloads and browser restarts, until the browser evicts it or the user clears site data. **永久保存, 不会丢失 and 已备份 are claims this product must never make.** `navigator.storage.estimate()` is not used: it reports origin-wide usage including the knowledge caches, so the number would not be the folder's, and a misleading number is worse than none.
 
 ---
 

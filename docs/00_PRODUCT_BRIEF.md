@@ -169,6 +169,10 @@ Retrieval happens **in the browser**, over knowledge shipped with the site as st
 
 Cross-agent retrieval is a **correctness bug**, not a tuning issue. Acceptance criteria E4/E5 test it explicitly.
 
+**The user's own documents are the second corpus, and the 资料夹 is where they persist.** An attachment lives for one session; a document saved to the 资料夹 stays in the browser across reloads and across 清空对话, so an expert can pick up a résumé, a report or a plan where it left off instead of being handed the file again. That is the difference between a chatbot with a file box and an expert that knows you.
+
+What it is not: a document store. Five per agent, text only, no original file, no sync between devices, and no promise that the browser will keep it — clearing site data, private mode, or storage pressure ends it. The honest limit is stated in the panel rather than discovered (`04_AGENT_SPEC.md` §8).
+
 ---
 
 ## 8. Workflow
@@ -270,4 +274,4 @@ Before any public launch in mainland China, the service-registration question fo
 | `06_ACCEPTANCE.md` | Definition of Done. Every item is testable. |
 | `07_ROADMAP.md` | What comes after the demo, and the trigger for each step |
 | `AGENT_CODING_PROMPT.md` | How the coding agent should work, phase by phase |
-| `DEMO_SCRIPT.md` | Six-part demo walkthrough |
+| `DEMO_SCRIPT.md` | Seven-part demo walkthrough |

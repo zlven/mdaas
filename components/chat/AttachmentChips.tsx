@@ -1,5 +1,6 @@
 "use client";
 
+import { formatChars } from "@/components/ui/format";
 import type { Upload } from "@/lib/files/types";
 
 /**
@@ -25,19 +26,31 @@ import type { Upload } from "@/lib/files/types";
  *
  * The list is a `<ul>` because it is a list of things. §6 says so, and it is what
  * makes a screen reader announce three items instead of three stray strings.
+ *
+ * `onSave` is the 资料夹's entry point: a saved document is an attachment with a
+ * longer life, so the control that moves one into the folder belongs on the chip
+ * rather than in a menu somewhere else. See the note at the button.
  */
-
-/** `8,412` — the wireframe's form. Grouped, because six-digit counts get read. */
-function formatChars(chars: number): string {
-  return chars.toLocaleString("zh-CN");
-}
 
 export function AttachmentChips({
   uploads,
   onRemove,
+  onSave,
 }: {
   uploads: Upload[];
   onRemove: (key: string) => void;
+  /**
+   * Saves one parsed attachment to the 资料夹, or `null` when the folder cannot
+   * be written to at all — in which case the control is not offered rather than
+   * offered and refused. A nullable handler instead of a separate boolean so the
+   * two cannot disagree about which one the button reads.
+   *
+   * A full folder is **not** one of those cases. The store owns the cap and words
+   * the refusal (`lib/llm/errors.ts`), and this component has no way to know
+   * whether a slot has since been freed — so the click is allowed and the answer
+   * is reported where the click happened.
+   */
+  onSave: ((upload: Upload) => void) | null;
 }) {
   if (uploads.length === 0) return null;
 
@@ -78,6 +91,25 @@ export function AttachmentChips({
               </span>
             </>
           )}
+
+          {/* Only for a `ready` file, and only when the folder can be written
+              to. A `parsing` one has no text to save yet, and a `failed` one has
+              no text at all — offering the control there would be offering to
+              save nothing.
+
+              **`type="button"` is load-bearing here and not merely tidy.** These
+              chips are rendered inside `ChatInput`'s `<form>`, where a button
+              with no `type` defaults to `submit` — clicking 存到资料夹 would send
+              the message. */}
+          {upload.status.kind === "ready" && onSave !== null ? (
+            <button
+              type="button"
+              onClick={() => onSave(upload)}
+              className="shrink-0 rounded-[var(--radius-sm)] px-1 text-ink-subtle underline underline-offset-2 transition-colors duration-150 ease-out hover:text-ink"
+            >
+              存到资料夹
+            </button>
+          ) : null}
 
           <button
             type="button"

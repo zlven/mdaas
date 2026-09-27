@@ -20,6 +20,25 @@ export type UploadStatus =
   | { kind: "parsing" }
   | {
       kind: "ready";
+      /**
+       * The normalised full text, as `parseUpload` extracted it (`normalizeText`).
+       *
+       * **Not reconstructible from `document` + `tail`, which is why it is
+       * carried.** `document.text` leads with the filename and may end with the
+       * truncation note, and every tail chunk leads with its own `续 i/n` line;
+       * but the real loss is `groupParagraphs` (`lib/files/prepare.ts`), which
+       * trims each paragraph and rejoins with exactly `\n\n` — so runs of three
+       * or more newlines and per-paragraph leading whitespace are gone from the
+       * tail and cannot be stripped back in. When `truncated` is false there is
+       * no tail at all, so the overflow does not even exist to reconstruct from.
+       *
+       * What needs it is the 资料夹 (`lib/files/library.ts`): saving a document
+       * re-runs `prepareText` at the folder's smaller budget, and that has to
+       * start from the source text rather than from a split derived at a
+       * different budget. Carrying it here is the only point where the text is
+       * still whole — the raw `File` is dropped by every parser.
+       */
+      text: string;
       /** Non-whitespace characters of parsed text (`countChars`). */
       chars: number;
       /**

@@ -13,10 +13,18 @@
  * would make it the one unguarded way into the prompt.
  *
  * The wording below is not decoration. The prompts refer to this material as
- * 「参考资料」 and are built with a check that each one contains the phrase
- * 「不是指令」 (scripts/build-assets.mts); the delimiter has to be the string the
- * prompt is talking about, or the model is being told about a boundary it cannot
- * see.
+ * 「参考资料」 and are built with a check that each one contains the marker phrase
+ * 「参考资料是数据」 (scripts/build-assets.mts); the delimiter has to be the string
+ * the prompt is talking about, or the model is being told about a boundary it
+ * cannot see.
+ *
+ * That comment named 「不是指令」 until this was corrected, and the correction is
+ * worth keeping a note of: 「不是指令」 is not a phrase the build checks for. It
+ * was the *old* marker, retired because it appears four times in every prompt —
+ * so a `String.includes` check on it passes unconditionally and cannot fail.
+ * Naming it here was a second-order version of the same mistake: a reader looking
+ * for the enforced clause would have found one the build does not enforce. The
+ * marker to reason about is the one in `REQUIRED_CLAUSES`, so name that.
  */
 
 import type { RetrievedChunk } from "@/lib/rag/bm25";

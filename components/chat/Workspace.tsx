@@ -4,15 +4,18 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { AgentFacts } from "@/components/agent/AgentRails";
+import { LibraryPanel } from "@/components/agent/LibraryPanel";
 import { ProfileNudge, ProfilePanel } from "@/components/agent/ProfilePanel";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Markdown } from "@/components/chat/Markdown";
 import { RetrievalPanel } from "@/components/chat/RetrievalPanel";
 import { ToolPanel } from "@/components/tools/ToolPanel";
 import { Button, buttonClass } from "@/components/ui/Button";
+import { Notice } from "@/components/ui/Notice";
 import { WorkflowRunView } from "@/components/workflow/WorkflowRunView";
 import { profileEntries } from "@/lib/agents/profile";
 import type { AgentConfig } from "@/lib/agents/types";
+import { libraryDocumentFrom } from "@/lib/files/library";
 import { prepareUpload } from "@/lib/files/parse";
 import type { Upload } from "@/lib/files/types";
 import { appError, isAppError, type AppError } from "@/lib/llm/errors";
@@ -21,7 +24,7 @@ import type { ChatMessage, Credentials } from "@/lib/llm/types";
 import type { RetrievedChunk } from "@/lib/rag/bm25";
 import { composeSystemPrompt } from "@/lib/rag/context";
 import { loadAgentRetriever } from "@/lib/rag/retriever";
-import { uploadHits } from "@/lib/rag/uploads";
+import { documentHits } from "@/lib/rag/uploads";
 import {
   clearConversation,
   conversationSnapshot,
@@ -29,6 +32,14 @@ import {
   setConversation,
   subscribeConversation,
 } from "@/lib/store/conversations";
+import {
+  addLibraryDocument,
+  librarySnapshot,
+  newDocumentId,
+  savedDocuments,
+  serverLibrarySnapshot,
+  subscribeLibrary,
+} from "@/lib/store/library";
 import { profileSnapshot } from "@/lib/store/memory";
 import { isConfigured, settingsSnapshot, subscribeSettings } from "@/lib/store/settings";
 import {
@@ -118,6 +129,19 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
   const [uploads, setUploads] = useState<Upload[]>([]);
 
   /**
+   * A refusal from the 资料夹, rendered directly above the message box.
+   *
+   * It lives here rather than in the panel because it answers a click made here —
+   * on a chip, or on 添加文档 — and the panel is in the rail, which below `lg` is
+   * collapsed. The message itself is the store's (`lib/llm/errors.ts` words every
+   * user-facing string), and the one case that reaches this is a full folder: the
+   * store owns that cap, so this component does not pre-empt it. Freeing a slot
+   * and clicking again is then the whole recovery, which is why the chip is left
+   * where it is rather than being consumed by the failure.
+   */
+  const [libraryNotice, setLibraryNotice] = useState<AppError | null>(null);
+
+  /**
    * The transcript lives in the browser — `01_PRD.md` §5, `06_ACCEPTANCE.md` D7.
    *
    * While the read is in flight the store says `loading` rather than handing back
@@ -145,6 +169,29 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
     serverRunSnapshot,
   );
   const workflowRun = working.status === "ready" ? working.run : null;
+
+  /**
+   * The 资料夹, for the one thing this component needs from it: whether a parsed
+   * file can be saved at all.
+   *
+   * `LibraryPanel` subscribes to the same store, and two subscriptions to one
+   * store is what its listener set is for. This one exists because the save
+   * control is rendered here, on a chip, and the panel and the chip cannot be
+   * allowed to disagree about whether saving is possible — so they read one
+   * status, not two.
+   *
+   * A **locked** store (opened, unreadable) counts as unwritable: documents may
+   * exist that we have never seen, and the panel says so. A full one does not —
+   * the cap is the store's to enforce and to word, and this component has no way
+   * to know whether the panel just freed a slot.
+   */
+  const library = useSyncExternalStore(
+    useCallback((listener) => subscribeLibrary(agent.id, listener), [agent.id]),
+    useCallback(() => librarySnapshot(agent.id), [agent.id]),
+    serverLibrarySnapshot,
+  );
+  const libraryWritable =
+    library.status === "ready" || (library.status === "session-only" && library.editable);
 
   /**
    * Is the conversation occupied? One flag, because every control that asks the
@@ -207,9 +254,18 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       // inline budget on exactly this path — the workflow's copy is the newer
       // one, so leaving it inline here is how those two assertions quietly stop
       // covering half the product.
-      const uploadChunks = uploadHits(uploads, prompt);
+      //
+      // The 资料夹 is read **synchronously at send time**, the same way the
+      // profile below is and for the same reason: the store answers from module
+      // state, so this is the folder as of this message, and a value captured in
+      // a closure or held in `useState` would be one edit stale. That is also why
+      // `run`'s dependency list does not need `savedDocuments` in it — there is
+      // nothing here to go stale. The subscription that starts the load lives in
+      // `LibraryPanel`, and — for the save control — in this component's own
+      // `useSyncExternalStore` above; both are mounted whenever this one is.
+      const fileChunks = documentHits({ uploads, library: savedDocuments(agent.id), query: prompt });
 
-      setRetrieval({ hits: uploadChunks, error: null, pending: agent.knowledgeBase !== null });
+      setRetrieval({ hits: fileChunks, error: null, pending: agent.knowledgeBase !== null });
 
       // --- Standing context: the user's profile ------------------------------
       // Read at send time rather than held in state. The store is synchronous, so
@@ -236,10 +292,11 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
         }
       }
 
-      // Uploads first, then their overflow, then the knowledge base: the file the
-      // user handed over this turn outranks background corpus material, and
-      // `formatContext` numbers in array order.
-      const hits = [...uploadChunks, ...knowledgeHits];
+      // Attachments and the folder first, then the knowledge base: the user's own
+      // material outranks background corpus material, and `formatContext` numbers
+      // in array order. Within the first group the order is `documentHits`' and is
+      // documented there.
+      const hits = [...fileChunks, ...knowledgeHits];
       setRetrieval({ hits, error: retrievalError, pending: false });
 
       // Composed from all of it, after retrieval has settled, so a knowledge-base
@@ -308,8 +365,8 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
    * MiB PDF takes long enough that a chip appearing only on completion reads as
    * a click that did nothing.
    */
-  const attach = useCallback(
-    (files: File[]) => {
+  const prepareFiles = useCallback(
+    (files: File[], onReady?: (upload: Upload) => void) => {
       void (async () => {
         for (const file of files) {
           const key = `u${uploadSeq.current++}`;
@@ -323,15 +380,79 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
           // on the chip instead of in the conversation's error card.
           const upload = await prepareUpload(file, agent.id, key);
           setUploads((previous) => previous.map((entry) => (entry.key === key ? upload : entry)));
+
+          // The one thing a caller may do differently with a parsed file. Both
+          // callers show the chip first and both get the same refusal there; the
+          // folder path additionally saves it, and removes the chip on success.
+          onReady?.(upload);
         }
       })();
     },
     [agent.id],
   );
 
+  const attach = useCallback((files: File[]) => prepareFiles(files), [prepareFiles]);
+
   const removeUpload = useCallback((key: string) => {
     setUploads((previous) => previous.filter((entry) => entry.key !== key));
   }, []);
+
+  /**
+   * Moves one parsed attachment into the 资料夹 — `02_TECH_SPEC.md` §8.7.
+   *
+   * **The chip is removed on success, and that is a decision rather than a
+   * tidy-up.** The document now lives in the folder, and the folder's head is
+   * injected on every message including this one — so leaving the attachment
+   * attached would put the same text in the reference block twice, at the user's
+   * expense, and the prompt numbers those blocks. Saving moves a document from
+   * this turn's material to standing material; the chip disappearing *is* the
+   * feedback that it moved, and the panel it moved into is on screen.
+   *
+   * It also means there is no 「已存入」 state to keep in sync: a badge on the chip
+   * would be a second source of truth about the folder, and it would be wrong the
+   * moment the user deleted the document from the panel.
+   *
+   * On refusal the chip **stays**, carrying its parsed text, so the same click
+   * works once the user has made room.
+   */
+  const saveToLibrary = useCallback(
+    (upload: Upload) => {
+      // `null` for anything still parsing or already failed. The button is not
+      // offered for those, so this is a guard rather than a path.
+      const document = libraryDocumentFrom({
+        upload,
+        agentId: agent.id,
+        id: newDocumentId(),
+        savedAt: Date.now(),
+      });
+      if (document === null) return;
+
+      const result = addLibraryDocument(agent.id, document);
+      if (!result.ok) {
+        setLibraryNotice(result.error);
+        return;
+      }
+
+      setLibraryNotice(null);
+      removeUpload(upload.key);
+    },
+    [agent.id, removeUpload],
+  );
+
+  /**
+   * 添加文档 in the panel: the same parse, saved on arrival.
+   *
+   * Not a second parse loop — it hands files to `prepareFiles` exactly as 附件
+   * does, so a file the parser cannot read reports itself on a chip in the same
+   * words, and the chip is where `AttachmentChips` says a per-file refusal
+   * belongs. The chip appears while the file is read and is removed once the
+   * document is in the folder, which is the same move as saving from the chip;
+   * the only difference is that this path was started from the panel.
+   */
+  const addToFolder = useCallback(
+    (files: File[]) => prepareFiles(files, saveToLibrary),
+    [prepareFiles, saveToLibrary],
+  );
 
   const send = useCallback(
     (text: string) => {
@@ -432,6 +553,14 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
    * A new conversation, which per §8.7 also drops the attachments: they belong to
    * the session, not to the agent, and carrying them into a fresh thread would
    * make 「清空对话」 a lie about what is still in the prompt.
+   *
+   * **It does not touch the 资料夹, and that is the point of the feature.** A
+   * saved document is the user's own material, filed deliberately and independent
+   * of any one thread; deleting it here would mean clearing a conversation to ask
+   * a fresh question also destroyed the résumé the expert was hired to remember.
+   * The two are separate actions on purpose, and this function is where that
+   * boundary is drawn — so `clearLibrary` does not exist (`lib/store/library.ts`),
+   * and nothing here may grow a call to one.
    */
   const clear = useCallback(() => {
     abort.current?.abort();
@@ -450,6 +579,9 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
     clearRun(agent.id);
     setError(null);
     setRetrieval(NO_RETRIEVAL);
+    // Session-scoped attachments only. The 资料夹 lives in its own store, outlives
+    // this call, and is deleted one document at a time by the user — see the note
+    // above.
     setUploads([]);
   }, [agent.id]);
 
@@ -507,6 +639,15 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
               and history behaving exactly as if it had been typed. */}
           <div className="lg:hidden">
             <ProfilePanel agent={agent} variant="strip" idPrefix="strip" />
+          </div>
+
+          {/* The 资料夹's strip, for the same reason and with the same `idPrefix`
+              rule: below `lg` the rail is gone, and a saved document the user
+              cannot reach or delete is worse than no folder at all. It is a
+              second instance of the panel, so the two must not share element
+              ids — see the note in components/agent/LibraryPanel.tsx. */}
+          <div className="lg:hidden">
+            <LibraryPanel agent={agent} variant="strip" idPrefix="strip" onAddFiles={addToFolder} />
           </div>
 
           <ToolPanel tools={agent.tools} onSend={send} ready={ready} busy={busy} />
@@ -611,6 +752,24 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
           <div className="lg:hidden">{panel}</div>
 
           <div className="sticky bottom-0 bg-bg pb-6 pt-2">
+            {/* A refusal from the 资料夹, above the control that produced it —
+                saving is attempted on a chip or on 添加文档, and both are here.
+                Dismissible because the condition (a full folder) is one the user
+                fixes somewhere else, and a banner that outlives its cause is a
+                banner people learn to ignore. */}
+            {libraryNotice === null ? null : (
+              <div className="mb-2">
+                <Notice
+                  error={libraryNotice}
+                  action={
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setLibraryNotice(null)}>
+                      知道了
+                    </Button>
+                  }
+                />
+              </div>
+            )}
+
             <ChatInput
               ready={ready}
               busy={busy}
@@ -621,6 +780,7 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
               onStop={stop}
               onAttach={attach}
               onRemoveUpload={removeUpload}
+              onSaveToLibrary={libraryWritable ? saveToLibrary : null}
             />
           </div>
         </div>
@@ -633,6 +793,7 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
         agent={agent}
         retrieval={panel}
         profile={<ProfilePanel agent={agent} variant="rail" idPrefix="rail" />}
+        library={<LibraryPanel agent={agent} variant="rail" idPrefix="rail" onAddFiles={addToFolder} />}
       />
     </>
   );

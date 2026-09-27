@@ -19,8 +19,11 @@ import type { RetrievedChunk } from "@/lib/rag/bm25";
  * past the evidence to reach it.
  *
  * `hits` is the whole reference block, not only what the retriever matched: an
- * attached file's injected text is in there too (§8.7), and its row is
- * distinguishable by its `source`, which is the filename. The heading stays
+ * attached file's injected text is in there too (§8.7), and so is a saved
+ * document's — this turn's attachments and the 资料夹 come first, then the
+ * corpus. Each row is distinguishable by its `source`, which is the filename for
+ * anything the user supplied, and each row's heading says 资料夹 for a document
+ * that came from the folder. The heading stays
  * 「本次检索」 because that is what §5 names the section, and the count in the
  * summary is honest about being everything the model was given.
  */
@@ -91,7 +94,13 @@ export function RetrievalPanel({
 
         {pending ? <p>正在检索这位专家的知识库…</p> : null}
 
-        {!pending && hits.length === 0 ? <p>这次没有命中知识库里的内容。</p> : null}
+        {/* 「任何参考资料」, not 「知识库里的内容」. The block this panel reports on
+            has held three pools since the 资料夹 landed — this turn's
+            attachments, the folder, and the knowledge base — and the panel
+            counts all of them (`hits`). The narrower sentence was already
+            incomplete before that, and it is the one line here that names what
+            was searched rather than what was found. */}
+        {!pending && hits.length === 0 ? <p>这次没有命中任何参考资料。</p> : null}
 
         {hits.length > 0 ? (
           // Counts the attached files' injected text as well as retrieved chunks
