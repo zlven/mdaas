@@ -2,7 +2,7 @@
  * Model profiles — docs/02_TECH_SPEC.md §6.4
  *
  * A profile expresses **intent**, and decouples agent config from concrete model
- * names so a provider swap does not require editing nine agent configs.
+ * names so a provider swap does not require editing ten agent configs.
  *
  * The values here are *not* a wire format. The adapter decides what actually
  * goes on the wire, because the parameters that control sampling differ per

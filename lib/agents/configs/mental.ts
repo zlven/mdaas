@@ -62,7 +62,7 @@ export const mental: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.mental,
   knowledgeBase: "mental",
-  tools: [],
+  tools: ["bedtime"],
   workflows: [],
   modelProfile: "balanced",
   safetyPolicy: "crisis-escalation",

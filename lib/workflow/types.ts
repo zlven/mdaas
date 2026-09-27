@@ -43,7 +43,7 @@ import type { AppError } from "@/lib/llm/errors";
  * The cost, stated rather than discovered: a closed union means adding a workflow
  * requires a rebuild. Correct for a static export with no runtime plugin surface.
  */
-export const WORKFLOW_IDS = ["creator-30day", "office-meeting-summary", "fitness-plan"] as const;
+export const WORKFLOW_IDS = ["creator-30day", "office-meeting-summary", "fitness-plan", "travel-itinerary"] as const;
 
 export type WorkflowId = (typeof WORKFLOW_IDS)[number];
 

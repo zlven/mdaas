@@ -45,7 +45,7 @@ export function WorkflowControls({
   readonly blockedReason: string | null;
 }) {
   // Same rule as `AgentRails` and `ToolPanel`: an empty section is omitted
-  // rather than shown empty. Six of the nine agents declare no workflow, and
+  // rather than shown empty. Six of the ten agents declare no workflow, and
   // giving them a greyed-out 「暂不支持」 would make each of them read as
   // unfinished rather than as having a different job.
   if (workflows.length === 0) return null;

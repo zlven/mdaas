@@ -86,9 +86,9 @@ If those five steps work, the project has crossed from "AI chat demo" to "Vertic
 
 ---
 
-## 4. The nine agents
+## 4. The ten agents
 
-The UI shows all nine, and **all nine are functional**. Every one has its own prompt and its own knowledge base.
+The UI shows all ten, and **all ten are functional**. Every one has its own prompt and its own knowledge base.
 
 | # | ID | Name | Status |
 |---|---|---|---|
@@ -101,6 +101,7 @@ The UI shows all nine, and **all nine are functional**. Every one has its own pr
 | 7 | `style` | 👗 Style & Outfit Expert | **Functional** |
 | 8 | `career` | 🎯 Career & Interview Expert | **Functional** |
 | 9 | `parenting` | 🧒 Parenting Expert | **Functional** |
+| 10 | `travel` | 🧭 Travel Planning Expert | **Functional** |
 
 **`enabled: false` is still the mechanism for staging an agent**, and the `Coming Soon` card, the disabled workspace, and `NOT_IMPLEMENTED_PROMPT` all still exist. No agent currently uses them. Deleting them would be the wrong move: the next agent added is staged the same way, and a half-configured "just hidden" agent is exactly how an unreviewed safety obligation ships.
 
@@ -113,7 +114,9 @@ The first four were built first because they were the ones whose expertise could
 - `fitness` — the clearest consumer use case, and the one that exercises the safety-policy machinery (health disclaimers).
 - `study` — the largest single audience the four address, and the second one whose prompt carries a safety boundary of its own: sustained low mood or any self-harm signal stops the planning answer and hands off to a professional.
 
-The remaining five followed once `study` had proved the C4 path (one config, one prompt, one knowledge directory, no registry edit). Three of them — `mental`, `finance`, `parenting` — carry safety boundaries that **nothing in the runtime enforces**. Their prompts state those boundaries; `06_ACCEPTANCE.md` I13–I18 are the human checks, and until those have been run on a real browser with a real key, "shipped" for those three means "written and built", not "verified".
+The remaining six followed once `study` had proved the C4 path (one config, one prompt, one knowledge directory, no registry edit). Three of them — `mental`, `finance`, `parenting` — carry safety boundaries that **nothing in the runtime enforces**. Their prompts state those boundaries; `06_ACCEPTANCE.md` I13–I18 are the human checks, and until those have been run on a real browser with a real key, "shipped" for those three means "written and built", not "verified".
+
+`travel` carries a boundary of a different kind. It must not state a visa requirement, a fare, a timetable or an opening time — all of them change constantly and none of them we can source. That is a correctness obligation rather than a safety one, and it is enforced the same weak way: by the prompt, and by a human check (`06_ACCEPTANCE.md` I19). It is also the reason the agent is scoped to 行程规划与攻略 rather than 出境游: the parts of travel where a confident wrong answer is most likely are the parts left out.
 
 ---
 
@@ -243,7 +246,7 @@ Each artifact is written in the language of its consumer. This is deliberate, no
 
 ## 12. Safety and compliance — read before touching agent prompts
 
-Four of the nine domains (health, mental wellness, finance, minors) carry real regulatory and ethical constraints. These are not boilerplate:
+Four of the ten domains (health, mental wellness, finance, minors) carry real regulatory and ethical constraints. These are not boilerplate:
 
 - **Health agents** (`fitness`): education and lifestyle guidance only. No diagnosis, no treatment, no prescriptions, no promised outcomes.
 - **Mental wellness** (`mental`): requires a crisis-escalation policy with distinct risk tiers. Must never claim to replace a psychologist or doctor.
@@ -269,7 +272,7 @@ Before any public launch in mainland China, the service-registration question fo
 | `01_PRD.md` | Pages, features, workflows, MVP scope and non-goals |
 | `02_TECH_SPEC.md` | **Binding architecture.** Stack, BYOK, RAG, storage, migration path |
 | `03_UI_UX_SPEC.md` | Visual language, layouts, copy voice, accessibility |
-| `04_AGENT_SPEC.md` | The nine agents, and the rules for writing agent prompts |
+| `04_AGENT_SPEC.md` | The ten agents, and the rules for writing agent prompts |
 | `05_API_SPEC.md` | Provider adapter contract + optional proxy contract |
 | `06_ACCEPTANCE.md` | Definition of Done. Every item is testable. |
 | `07_ROADMAP.md` | What comes after the demo, and the trigger for each step |

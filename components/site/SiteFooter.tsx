@@ -13,7 +13,7 @@ export function SiteFooter() {
     <footer className="mt-24 border-t border-line">
       <div className="mx-auto max-w-6xl px-6 py-12 text-small text-ink-muted">
         <p className="max-w-2xl">
-          这是一个演示项目。九位专家各自带着自己的知识库，都可以对话。回答由 AI
+          这是一个演示项目。十位专家各自带着自己的知识库，都可以对话。回答由 AI
           生成，可能出错——答案里会说明这次有没有引用到知识库，你也可以在右侧看到它实际检索到的片段。
           产品文档和全部源码都在仓库里。
         </p>

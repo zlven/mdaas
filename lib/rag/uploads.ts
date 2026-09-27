@@ -27,8 +27,9 @@
  * one rule it adds is the per-document toggle, and that is a difference in *which
  * chunks enter the pool*, not in how they are searched or rendered.
  *
- * Nothing here is gated on the agent having a knowledge base: five of the nine
- * agents have none, and every one of them can read a file the user hands it.
+ * Nothing here is gated on the agent having a knowledge base — any agent can
+ * read a file the user hands it. Every agent now has a knowledge base, so this
+ * module is correct to be indifferent to the question rather than merely lucky.
  */
 
 import type { LibraryDocument } from "@/lib/files/library";

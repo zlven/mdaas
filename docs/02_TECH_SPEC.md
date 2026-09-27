@@ -150,8 +150,8 @@ export interface AgentConfig {
   enabled: boolean;               // false → "Coming Soon"
   systemPrompt: string;           // resolved from lib/generated/prompts.ts
   knowledgeBase: string | null;   // knowledge/<id>/ — null when not enabled
-  tools: string[];                // tool ids; [] in the MVP
-  workflows: string[];            // workflow ids; [] when none
+  tools: readonly ToolId[];       // ids from lib/tools/types.ts; [] when none
+  workflows: readonly WorkflowId[]; // ids from lib/workflow/definitions/; [] when none
   modelProfile: ModelProfileId;   // §6.4
   safetyPolicy: SafetyPolicyId;   // §13
   suggestedPrompts: string[];     // empty-state chips in the workspace
@@ -162,14 +162,24 @@ export interface AgentConfig {
 
 ### Adding an agent — the four-step test
 
-Adding agent #10 must require exactly:
+Adding agent #11 must require exactly:
 
 1. a new file in `lib/agents/configs/`,
 2. a new `prompts/<id>.md`,
 3. optionally a new `knowledge/<id>/`,
 4. optionally a workflow definition.
 
-**If it requires editing anything in `lib/agents/registry.ts` beyond the config array, or anything in `app/`, or anything in `lib/llm/`, the design has been violated.** This is acceptance criterion C4.
+**If it requires editing anything in `app/`, or anything in `lib/llm/`, or anything in `lib/agents/registry.ts` beyond the import and the array entry, the design has been violated.** This is acceptance criterion C4.
+
+**Where the tenth agent actually landed, recorded because the test above reads more absolute than it is.** `travel` was added and the file list is exactly the four above, plus three lines that the test does not mention:
+
+| File | Lines | Why the test does not cover it |
+|---|---|---|
+| `lib/agents/registry.ts` | import + array entry | named in the test |
+| `lib/workflow/types.ts` | `WORKFLOW_IDS` gains `travel-itinerary` | a **new** workflow id |
+| `lib/workflow/registry.ts` | import + `WORKFLOW_DEFINITIONS` entry | a new definition |
+
+The distinction that matters: an agent that **reuses** existing tool and workflow ids costs the four files and two registry lines. An agent that introduces a **new** id also edits the registry that enumerates that kind of id — `TOOL_IDS`/`TOOL_DEFINITIONS` for a tool, `WORKFLOW_IDS`/`WORKFLOW_DEFINITIONS` for a workflow. That is not a leak in the design; it is the price of the type pair that makes a dangling id a compile error, and it is the trade `lib/workflow/types.ts` already states: a closed union means adding one requires a rebuild. What C4 actually asserts is that **no runtime code, and nothing in `app/` or `lib/llm/`, knows the new agent exists** — and that held.
 
 ---
 
@@ -245,7 +255,7 @@ The gateway emits `StreamChunk`s; the UI renders text as it arrives. Streaming i
 
 ### 6.4 Model profiles — intent, not parameters
 
-`ModelProfileId` decouples agent config from concrete model names, so a provider swap does not require editing nine agent configs.
+`ModelProfileId` decouples agent config from concrete model names, so a provider swap does not require editing ten agent configs.
 
 A profile expresses **intent**. It does **not** carry wire parameters, because the parameters that control sampling differ per provider *and per model generation* — and getting this wrong is a 400 from the provider, not a subtly worse answer.
 

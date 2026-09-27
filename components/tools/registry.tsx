@@ -28,4 +28,11 @@ export const TOOL_COMPONENTS: Record<ToolId, ComponentType<ToolProps>> = {
   "food-tef": dynamic(() => import("@/components/tools/FoodTef")),
   "meeting-cost": dynamic(() => import("@/components/tools/MeetingCost")),
   "speaking-time": dynamic(() => import("@/components/tools/SpeakingTime")),
+  "word-plan": dynamic(() => import("@/components/tools/WordPlan")),
+  "offer-compare": dynamic(() => import("@/components/tools/OfferCompare")),
+  "emergency-fund": dynamic(() => import("@/components/tools/EmergencyFund")),
+  "cost-per-wear": dynamic(() => import("@/components/tools/CostPerWear")),
+  "month-age": dynamic(() => import("@/components/tools/MonthAge")),
+  bedtime: dynamic(() => import("@/components/tools/Bedtime")),
+  "time-diff": dynamic(() => import("@/components/tools/TimeDiff")),
 };

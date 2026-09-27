@@ -89,7 +89,7 @@ export function ChatInput({
    */
   busy: boolean;
   uploads: Upload[];
-  /** The agent's workflows — docs/01_PRD.md §8.1. Empty for six of the nine. */
+  /** The agent's workflows — docs/01_PRD.md §8.1. Empty for six of the ten. */
   workflows: readonly WorkflowId[];
   onSend: (text: string) => void;
   onRunWorkflow: (id: WorkflowId, input: string) => void;

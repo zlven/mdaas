@@ -49,7 +49,7 @@ export const style: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.style,
   knowledgeBase: "style",
-  tools: [],
+  tools: ["cost-per-wear"],
   workflows: [],
   modelProfile: "creative",
   safetyPolicy: "content-default",

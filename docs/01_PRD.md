@@ -34,7 +34,7 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | # | Item |
 |---|---|
 | 1 | Landing page |
-| 2 | Agent grid — all 9 visible, all 9 functional |
+| 2 | Agent grid — all 10 visible, all 10 functional |
 | 3 | Agent workspace — chat, streaming, markdown |
 | 4 | BYOK settings — provider, key, model, verification |
 | 5 | Agent-scoped RAG, in-browser |
@@ -80,7 +80,7 @@ Four pages. No more.
 | Zone | Contents |
 |---|---|
 | Hero | Product name, one-line positioning, sub-line, primary CTA |
-| Agent matrix | Grid of all 9 agent cards |
+| Agent matrix | Grid of all 10 agent cards |
 | How it works | The five-step action chain from §1, compressed to four or five beats |
 | BYOK explainer | One short block: you bring your own model key, we never see it |
 | Footer | Repo, docs, disclosure that this is a demo |
@@ -89,9 +89,9 @@ Four pages. No more.
 
 ### 3.2 `/agents` — Expert directory
 
-All 9 agents, each linking to its own workspace. The `Coming Soon` treatment — inert card, no hover lift, no cursor change, no navigation — is still implemented and specified; **no agent currently renders with it** (`00_PRODUCT_BRIEF.md` §4).
+All 10 agents, each linking to its own workspace. The `Coming Soon` treatment — inert card, no hover lift, no cursor change, no navigation — is still implemented and specified; **no agent currently renders with it** (`00_PRODUCT_BRIEF.md` §4).
 
-Filters are **not** in the MVP — nine cards fit on one screen.
+Filters are **not** in the MVP — ten cards are few enough to scan without one, and a filter control on a list this short is a worse list.
 
 ### 3.3 `/agents/[id]` — Agent workspace
 
@@ -204,7 +204,7 @@ Requirements:
 
 ## 7. Agent-scoped RAG
 
-`office` retrieves only from `knowledge/office/`. `creator` only from `knowledge/creator/`. `fitness` only from `knowledge/fitness/`. `study` only from `knowledge/study/`. The same holds for `mental`, `finance`, `style`, `career` and `parenting` — nine knowledge directories, nine indexes, no sharing.
+`office` retrieves only from `knowledge/office/`. `creator` only from `knowledge/creator/`. `fitness` only from `knowledge/fitness/`. `study` only from `knowledge/study/`. The same holds for `mental`, `finance`, `style`, `career`, `parenting` and `travel` — ten knowledge directories, ten indexes, no sharing.
 
 **Never mix.** This is structurally enforced — the browser only ever downloads the selected agent's index (`02_TECH_SPEC.md` §4).
 
@@ -268,9 +268,30 @@ Output sections: **Goal · Weekly Schedule · Session Detail · Lifestyle Sugges
 
 `safety-edu` policy applies: educational and lifestyle framing only, no diagnosis, no promised outcomes. See `02_TECH_SPEC.md` §13.
 
-### 8.5 Not in the MVP
+### 8.5 Travel — Itinerary Planning
 
-Workflows for any agent other than the three above. Six of the nine agents ship functional with `workflows: []`, `study` among them — a workflow has to be designed, not inferred, and nothing in the demo needs a seventh. Do not build speculative workflow infrastructure.
+**Input:** a trip in natural language — e.g. *「国庆想去日本，七天，带孩子。」*
+
+**Six stages, six model calls, each its own visible step. The order is the point** — it is the order a trip is actually planned, and each stage reads every stage before it:
+
+| # | Step | Output |
+|---|---|---|
+| 1 | 判断旅行类型与节奏 | what kind of trip this is, who is on it, and how tight or loose the pace should be |
+| 2 | 交通与住宿框架 | how the cities connect, what the transfers need to allow, where to stay and by what standard |
+| 3 | 分配城市与天数 | which places, how many days each, and what was cut and why |
+| 4 | 安排每日行程 | a day-by-day table — 天 · 上午 · 下午 · 晚上 · 住哪一带 |
+| 5 | 预算分配 | what the money goes on, which part is elastic, where this trip overruns |
+| 6 | 行前准备与风险应对 | what to do four weeks / two weeks / three days / the day before, and the fallback order |
+
+All six must appear in the final output as distinct sections.
+
+**The boundary is inherited from the prompt, not restated here.** No fares, no timetables, no opening hours, no visa rules, no named agencies — each stage asks for the framework and the official channel instead. Stage 2 and stage 4 carry the instruction in their own text (`lib/workflow/definitions/travel-itinerary.ts`), and every step runs under `prompts/travel.md` as its system turn. A boundary written in two places is one that eventually gets written in two different ways.
+
+**Six and not seven.** `creator-30day` is seven calls and takes most of a demo. Step 6 folds packing and risk together because both are "before you go" and neither needs its own call.
+
+### 8.6 Not in the MVP
+
+Workflows for any agent other than the four above. Six of the ten agents ship functional with `workflows: []`, `study` among them — a workflow has to be designed, not inferred, and nothing in the demo needs an eighth. Do not build speculative workflow infrastructure.
 
 ---
 

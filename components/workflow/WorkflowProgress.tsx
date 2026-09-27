@@ -13,7 +13,7 @@ import type { WorkflowRun } from "@/lib/workflow/types";
  *
  * **The live region is a separate `sr-only` paragraph, not the list.** Putting
  * `aria-live` on the `<ol>` would make every change re-announce the whole table —
- * nine labels, twice a second while a step streams — which is precisely why
+ * every label, twice a second while a step streams — which is precisely why
  * `Workspace` puts its live region on the answer being written rather than on the
  * conversation. One short sentence per state change is the whole requirement.
  */

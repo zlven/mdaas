@@ -60,9 +60,10 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 
 /**
  * The right rail. Sections with nothing in them are omitted rather than shown
- * empty — `tools` is `[]` for every agent in the MVP, and a "工具：无" line is
- * noise that makes the product look unfinished. The condition is on the value,
- * not hardcoded, so the first agent that does take tools gets the section.
+ * empty — a "工具：无" line is noise that makes the product look unfinished. The
+ * condition is on the value rather than hardcoded, which is what let this file
+ * stay untouched as `tools` went from empty everywhere, to three agents, to all
+ * ten. The workflow section below is where it still earns its keep.
  *
  * `retrieval` is a slot: the panel below it is client-rendered because what was
  * retrieved is per-turn state.
@@ -103,8 +104,8 @@ export function AgentFacts({
 
             An agent with no workflow renders nothing at all rather than saying
             so — the rule this file already states for its other sections. Six
-            of the nine have none, and 「暂不支持」 on six cards would read as an
-            unfinished product rather than as nine different specialisms. */}
+            of the ten have none, and 「暂不支持」 on six cards would read as an
+            unfinished product rather than as ten different specialisms. */}
         {agent.workflows.length > 0 ? (
           <Fact label="工作流">{agent.workflows.map((id) => WORKFLOW_DEFINITIONS[id].label).join(" · ")}</Fact>
         ) : null}

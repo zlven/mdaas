@@ -74,10 +74,11 @@ import type { WorkflowId } from "@/lib/workflow/types";
  *
  * Three consequences that are easy to get wrong and are therefore stated here:
  *
- *   1. **Uploads are not gated on the agent having a knowledge base.** Five of
- *      the nine agents have none, and every one of them can read a file the user
- *      hands it. The `agent.knowledgeBase !== null` check below guards the
- *      retriever only.
+ *   1. **Uploads are not gated on the agent having a knowledge base.** The
+ *      `agent.knowledgeBase !== null` check below guards the retriever only.
+ *      This used to be illustrated by naming the five agents that had no
+ *      knowledge base; all ten have one now, so the `null` branch is correct and
+ *      unexercised, and no test covers it. Worth knowing before trusting it.
  *   2. **The two pools are searched separately.** Upload chunks get their own
  *      index so their scores are not normalised against knowledge chunks' — a
  *      shared index would let a long knowledge corpus push every upload hit below

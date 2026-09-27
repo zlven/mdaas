@@ -57,7 +57,7 @@ export const parenting: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.parenting,
   knowledgeBase: "parenting",
-  tools: [],
+  tools: ["month-age"],
   workflows: [],
   modelProfile: "balanced",
   safetyPolicy: "minor-safety",

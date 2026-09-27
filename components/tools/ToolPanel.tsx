@@ -22,8 +22,14 @@ import { TOOL_DEFINITIONS, type ToolId } from "@/lib/tools/types";
  *
  * **One row of chips, not one disclosure per tool.** At two lines each a
  * stacked list spends the whole top of the conversation on three tools, and the
- * count is expected to grow — the arrangement has to cost the same at five tools
+ * count was expected to grow — the arrangement has to cost the same at five tools
  * as at one. So the chips are a selector and there is a single panel below them.
+ *
+ * The count did grow: there are ten tools now. They are spread one per agent, so
+ * no strip has yet rendered more than a single chip and the wrap behaviour this
+ * paragraph is about remains unexercised in a browser — `docs/06_ACCEPTANCE.md`
+ * D11 is the check that would exercise it. The design is unchanged and the
+ * reasoning above still stands; it has simply not been asked to prove itself.
  *
  * The consequences, each of which is a decision rather than a detail:
  *

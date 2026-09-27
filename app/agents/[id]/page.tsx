@@ -13,7 +13,7 @@ import { tintOf } from "@/components/agent/tint";
  * One agent's workspace — docs/01_PRD.md §3.3, docs/03_UI_UX_SPEC.md §5.
  *
  * `output: 'export'` means every route is a file on disk, so the id list has to
- * be known at build time. `generateStaticParams` is what makes the nine
+ * be known at build time. `generateStaticParams` is what makes the ten
  * workspaces exist at all; without it the directory route builds nothing and
  * every card links to a 404.
  */

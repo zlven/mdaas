@@ -50,7 +50,7 @@ export const career: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.career,
   knowledgeBase: "career",
-  tools: [],
+  tools: ["offer-compare"],
   workflows: [],
   modelProfile: "reasoning",
   safetyPolicy: "content-default",

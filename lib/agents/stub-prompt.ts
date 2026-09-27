@@ -1,8 +1,8 @@
 /**
  * The system prompt carried by an agent that has been registered but not built.
  *
- * **Nothing imports this today.** All nine agents are `enabled: true` and all
- * nine have a real prompt. It stays because `AgentConfig.systemPrompt` is a
+ * **Nothing imports this today.** All ten agents are `enabled: true` and all
+ * ten have a real prompt. It stays because `AgentConfig.systemPrompt` is a
  * required string, so the staging path — register the config first, write the
  * content later — needs *something* to put in the field, and `enabled: false`
  * is what makes it unreachable.

@@ -52,7 +52,7 @@ export const finance: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.finance,
   knowledgeBase: "finance",
-  tools: [],
+  tools: ["emergency-fund"],
   workflows: [],
   modelProfile: "reasoning",
   safetyPolicy: "financial-edu",

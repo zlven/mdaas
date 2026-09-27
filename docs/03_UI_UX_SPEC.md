@@ -128,7 +128,7 @@ AI SUPER EXPERT
 你的 AI 专家团队，
 覆盖工作与生活的每一个领域。
 
-9 位垂直领域专家。一个智能工作台。
+10 位垂直领域专家。一个智能工作台。
 
 [ 浏览专家 ]        [ 了解 BYOK ]
 ```
@@ -233,6 +233,11 @@ Above the conversation, in the centre column. **One line, however many tools the
 ┌──────────────────────────────────────────────┐
 │ [ 会议成本 ] [ 口播时长 ] [ 食物热效应 ]       │
 └──────────────────────────────────────────────┘
+```
+
+The three chips above are **illustrative, not a state the product ships**. Ten tools exist, but they are spread one per agent — every card's strip holds exactly one chip — so the one-line-at-any-count property this section designs for has never been rendered above one. The sketch is kept because it is what the layout must survive; `06_ACCEPTANCE.md` D11 is the check that makes it real, and it still requires temporarily adding tools to some agent's array.
+
+```
 ┌──────────────────────────────────────────────┐ ← selected tool's panel
 │ 按人数、时长和平均时薪，算出这场会花掉多少钱。 │ ← Small, --ink-muted
 │ ──────────────────────────────────────────── │

@@ -44,7 +44,7 @@ export const study: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.study,
   knowledgeBase: "study",
-  tools: [],
+  tools: ["word-plan"],
   workflows: [],
   modelProfile: "reasoning",
   safetyPolicy: "content-default",

@@ -82,7 +82,7 @@ export interface AgentConfig {
    * false renders the card as "Coming Soon" and blocks the workspace from
    * rendering an input (01_PRD.md §3.3).
    *
-   * The staging mechanism, not a live state: all nine agents are `enabled: true`
+   * The staging mechanism, not a live state: all ten agents are `enabled: true`
    * and the `Coming Soon` render paths are currently unreachable
    * (00_PRODUCT_BRIEF.md §4).
    */

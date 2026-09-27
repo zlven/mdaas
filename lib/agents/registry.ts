@@ -25,9 +25,10 @@ import { office } from "@/lib/agents/configs/office";
 import { parenting } from "@/lib/agents/configs/parenting";
 import { study } from "@/lib/agents/configs/study";
 import { style } from "@/lib/agents/configs/style";
+import { travel } from "@/lib/agents/configs/travel";
 
 /**
- * Display order. The four original agents come first and the five added later
+ * Display order. The four original agents come first and the six added later
  * follow, which is also the order their knowledge bases were written in. It is
  * presentation only — `enabled` is what decides whether a card is openable, and
  * the grid deliberately does not re-sort on it (see `AgentGrid`).
@@ -42,6 +43,7 @@ const AGENTS: AgentConfig[] = [
   style,
   career,
   parenting,
+  travel,
 ];
 
 /**

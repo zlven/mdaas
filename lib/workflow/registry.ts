@@ -25,12 +25,14 @@
 import { creator30day } from "@/lib/workflow/definitions/creator-30day";
 import { fitnessPlan } from "@/lib/workflow/definitions/fitness-plan";
 import { officeMeetingSummary } from "@/lib/workflow/definitions/office-meeting-summary";
+import { travelItinerary } from "@/lib/workflow/definitions/travel-itinerary";
 import type { WorkflowDefinition, WorkflowId } from "@/lib/workflow/types";
 
 export const WORKFLOW_DEFINITIONS: Record<WorkflowId, WorkflowDefinition> = {
   "creator-30day": creator30day,
   "office-meeting-summary": officeMeetingSummary,
   "fitness-plan": fitnessPlan,
+  "travel-itinerary": travelItinerary,
 };
 
 /** Total by construction, so `undefined` is not a case a caller has to handle. */
