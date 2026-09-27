@@ -1,6 +1,7 @@
 "use client";
 
 import { Disclosure } from "@/components/ui/Disclosure";
+import { RailSection } from "@/components/ui/RailSection";
 import type { AppError } from "@/lib/llm/errors";
 import type { RetrievedChunk } from "@/lib/rag/bm25";
 
@@ -69,22 +70,23 @@ export function RetrievalPanel({
 }) {
   return (
     <section aria-labelledby="retrieval-heading">
-      <h3 id="retrieval-heading" className="text-micro font-medium text-ink-subtle">
-        本次检索
-      </h3>
+      {/* The rail's one heading idiom, `RailSection` — and the only caller that
+          passes an `id`, because the section's `aria-labelledby` needs the
+          heading to be addressable. Without it `aria-labelledby` would have to
+          point at a wrapper, which announces the whole panel as its own label. */}
+      <RailSection id="retrieval-heading" title="本次检索" bodyClassName="space-y-1 text-small text-ink-muted">
+        {/* These are four independent statements, not four branches of one.
+            They used to be a chain, which was correct while every source of hits
+            shared a single fate — an upload does not. A failed knowledge index
+            leaves the attached file's text in the prompt, and a query that
+            matches nothing in the corpus still carries the file the user handed
+            over. A chain would have shown the error and silently hidden the
+            material the answer was actually built from.
 
-      {/* These are four independent statements, not four branches of one.
-          They used to be a chain, which was correct while every source of hits
-          shared a single fate — an upload does not. A failed knowledge index
-          leaves the attached file's text in the prompt, and a query that matches
-          nothing in the corpus still carries the file the user handed over. A
-          chain would have shown the error and silently hidden the material the
-          answer was actually built from.
-
-          The `hits` branch also used to keep `summary`'s native triangle while
-          every chunk row under it had theirs hidden — the same control behaving
-          two ways on one screen, which is the drift `Disclosure` exists to stop. */}
-      <div className="mt-1 space-y-1 text-small text-ink-muted">
+            The `hits` branch also used to keep `summary`'s native triangle while
+            every chunk row under it had theirs hidden — the same control
+            behaving two ways on one screen, which is the drift `Disclosure`
+            exists to stop. */}
         {error ? (
           // RETRIEVAL_FAILED is not fatal: the answer continues from general
           // knowledge and says so (§8.8). Saying that here keeps the panel from
@@ -114,7 +116,7 @@ export function RetrievalPanel({
             </ul>
           </Disclosure>
         ) : null}
-      </div>
+      </RailSection>
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { formatChars } from "@/components/ui/format";
 import { Notice } from "@/components/ui/Notice";
+import { RailSection } from "@/components/ui/RailSection";
 import type { AgentConfig } from "@/lib/agents/types";
 import { includedCount, libraryInlineChars, type LibraryDocument } from "@/lib/files/library";
 import { ACCEPTED_EXTENSIONS, ACCEPTED_LABEL, canAddDocument, MAX_LIBRARY_DOCUMENTS } from "@/lib/files/limits";
@@ -216,7 +217,10 @@ export function LibraryPanel({
           // not shown (see `lib/store/library.ts`). 永久保存 and 已备份 are claims
           // this product must never make: the folder survives 清空对话, reloads
           // and restarts, until the browser evicts it or the user clears site data.
-          <p className="border-t border-line pt-3 text-micro text-ink-subtle">
+          // `--text-small` and not Body, for the reason spelled out at the same
+          // line in `ProfilePanel`: fine print about the store, not the content
+          // of the section.
+          <p className="border-t border-line pt-3 text-small text-ink-subtle">
             资料夹保存在这个浏览器里，不跨设备同步。清除站点数据、使用无痕模式，或浏览器存储空间不足时，保存的文档可能丢失。
           </p>
         ) : null}
@@ -236,14 +240,15 @@ export function LibraryPanel({
     return <Disclosure summary={heading}>{body()}</Disclosure>;
   }
 
-  // The rail's idiom — a small heading with content under it, the shape every
-  // `Fact` beside it uses. Not a `<details>`: the rail is permanently open, and
-  // one accordion among six plain sections reads as a different kind of thing.
+  // The rail's idiom, declared once in `RailSection` — and *not* a `<details>`:
+  // the rail is permanently open, and one accordion among six plain sections
+  // reads as a different kind of thing. (The strip variant above is the
+  // exception: there the panel is one row in the composer's layout and owes that
+  // layout its own disclosure shape.)
   return (
-    <div>
-      <h3 className="text-micro font-medium text-ink-subtle">{heading}</h3>
-      <div className="mt-1">{body()}</div>
-    </div>
+    <RailSection title="资料夹" note={summary()}>
+      {body()}
+    </RailSection>
   );
 }
 

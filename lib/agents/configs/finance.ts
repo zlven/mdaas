@@ -17,6 +17,9 @@ export const finance: AgentConfig = {
   name: "Personal Finance Educator",
   nameZh: "AI 个人理财教育专家",
   icon: "💰",
+  /** Bronze — money, ledgers, weight. Deliberately not gold: this is education,
+   *  and the one colour the product must not look like it is promising. */
+  tint: "#77614c",
   category: "work",
   description: "讲清楚资产配置的思路和概念。只做理财教育，不推荐任何具体产品。",
   capabilities: ["资产配置科普", "记账方法", "风险认知", "保险科普"],

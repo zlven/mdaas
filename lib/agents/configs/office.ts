@@ -7,6 +7,8 @@ export const office: AgentConfig = {
   name: "Office Productivity Expert",
   nameZh: "AI 全能办公专家",
   icon: "💼",
+  /** Indigo — documents, ink, the colour every office suite already uses. */
+  tint: "#5760a1",
   category: "work",
   description: "把会议、报告、邮件和文档，变成可以照着做的结论与下一步。",
   capabilities: ["会议纪要", "工作报告", "商务邮件", "PPT 大纲", "文档分析"],

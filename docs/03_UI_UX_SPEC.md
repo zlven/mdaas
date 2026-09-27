@@ -28,27 +28,44 @@ Concrete values. Deviating requires a reason.
 
 ### Colour
 
-A near-monochrome interface. **The interface is not where colour lives — the agents' icons are.** Restraint here is what reads as premium.
+A near-monochrome interface. **The interface is not where colour lives — the agents are.** Restraint here is what reads as premium.
 
 ```css
---color-bg:            #FAFAF9;   /* app background — warm near-white, not pure white */
+--color-bg:            #F7F7F5;   /* app background — warm near-white, not pure white */
 --color-surface:       #FFFFFF;   /* cards, panels */
---color-surface-alt:   #F4F4F5;   /* subtle fills, code blocks, hover */
---color-line:          #E7E7E4;   /* 1px hairlines */
---color-line-strong:   #D4D4D1;   /* focus rings on containers, dividers that must read */
+--color-surface-alt:   #F0F0EE;   /* subtle fills, code blocks, hover */
+
+--color-line:          #DCDCD8;   /* 1px hairlines */
+--color-line-strong:   #C2C2BD;   /* focus rings on containers, dividers that must read */
 
 --color-ink:           #18181B;   /* primary text */
---color-ink-muted:     #6B6B70;   /* secondary, captions */
---color-ink-subtle:    #9A9AA0;   /* placeholders, disabled */
+--color-ink-muted:     #52525B;   /* secondary, captions */
+--color-ink-subtle:    #6E6E76;   /* the palest text that must still be read */
 
---color-accent:        #2F5D62;   /* single restrained accent — deep teal */
+--color-accent:        #2F5D62;   /* the default accent — deep teal */
 --color-accent-hover:  #26494D;
 --color-accent-fg:     #FFFFFF;
 
 --color-success:       #3F7A4E;
---color-warning:       #A8702B;
+--color-warning:       #976527;
 --color-danger:        #B3453C;
 ```
+
+#### Contrast floors — `npm run verify:theme`
+
+Every value above clears a floor, and the floors are the reason several of them look darker than they need to:
+
+| | Floor | Shipped |
+|---|---|---|
+| `ink`, `ink-muted`, `ink-subtle`, `success`, `warning`, `danger` on `bg` and on `surface` | 4.5:1 (WCAG AA) | 4.66 – 17.72 |
+| `line`, `line-strong` on `surface` | 1.30:1 (a hairline that reads) | 1.375 / 1.788 |
+| `surface-alt` on `surface` | 1.12:1 (a fill you can see) | 1.141 |
+| `accent-fg` on `accent` | 4.5:1 | 7.34 |
+| each agent's `tint` behind white text | 4.5:1 | 5.83 – 5.84 |
+
+**The contract covers every colour in the block, not only the ones something renders today.** `--warning` had no consumer and sat at 3.90:1 before this was enforced; the point of the wider contract is that whoever reaches for it next cannot pick up a broken colour.
+
+These were all measured once, during the redesign, and a measurement nobody re-runs is not a guarantee. **`scripts/verify-theme.mts` is the guarantee** — it parses this block out of `app/globals.css`, computes each ratio, and fails the build. Do not lighten a value without running it. (One consequence worth knowing: the three `ink` steps are also asserted to be ≥ ΔE76 8 apart from each other, because a compliant `ink-subtle` would otherwise be *darker* than `ink-muted` and collapse two steps into one.)
 
 **These are the exact names in `app/globals.css`.** The project uses Tailwind v4, where tokens are declared in CSS under `@theme` — there is no `tailwind.config.js`. A token named `--color-ink` produces the utilities `text-ink`, `bg-ink`, and `border-ink`.
 
@@ -56,10 +73,21 @@ The names are chosen for the utility they generate: `--color-ink` gives `text-in
 
 Rules:
 
-- **One accent colour.** No second brand colour.
-- Use `--accent` for the primary action on a screen and for the active state of anything. Nowhere else.
+- **One accent colour per screen.** No second brand colour.
+- Use the accent for the primary action on a screen and for the active state of anything. Nowhere else.
 - Status colour only on genuine status: `Coming Soon` badge, workflow failure, error. Not for decoration.
-- Each agent gets a tint for its **icon plate only** — a 40×40 rounded square at ~12% opacity of a per-agent hue. Everything else on the card stays neutral.
+- Each agent gets a **`tint`**, declared in its config, used in exactly two places: its icon plate (a 40×40 rounded square at 14% behind the emoji) and the accent on its own pages.
+- **Ten agents side by side stay monochrome.** The landing page and `/agents` show the whole matrix at once, and ten accents in one view is the decoration §1 forbids. There, only the icon plates carry colour.
+
+#### "One accent per screen" and "one colour per agent" are the same rule
+
+This section used to say the accent was for one screen and the tint was for **the icon plate only**, which read as two rules that a per-agent accent would violate. They are one rule seen from two ends: **a screen belongs to one agent, so the accent on that screen is that agent's colour.**
+
+So the tint is allowed to reach exactly the places the accent was always allowed to reach — the primary action, the active state, the focus ring, the plate — and no further. It does **not** become a card colour, a heading colour, or a fill. On an agent's page (`app/agents/[id]/page.tsx`) that is a single style attribute setting `--color-accent` and `--color-accent-hover` on `<main>`; every `bg-accent` / `text-accent` / `border-accent` and the hand-written `:focus-visible` rule already read those as `var()`, so they follow without a component changing. See `lib/agents/accent.ts`, and `docs/06_ACCEPTANCE.md` J15.
+
+**A custom property whose value contains `var()` is substituted where it is declared**, so both properties must be set together — overriding only `--color-accent` leaves a per-agent button that snaps back to teal on hover. `verify:theme` asserts the pair.
+
+The ten tints were **solved, not chosen**: white text on a colour requires a relative luminance ≤ 0.1833, so for each domain's hue the lightness is fixed by that ceiling, and the remaining freedom was spent maximising the smallest pairwise CIELAB distance. The result is a minimum ΔE76 of **17.4** (`style`/`creator`) with every tint between 5.83:1 and 5.84:1 behind white. Ten hues share 360°, so ~36° each and three of them in the warm arc — 17.4 is near the ceiling for a palette that also has to keep each colour recognisable as its domain. That is defensible because **a tint is never load-bearing**: everywhere it appears, the agent's name is beside it.
 
 Dark mode is **out of scope for the MVP**. Do not implement it. Do implement the tokens above so it is a later swap, not a rewrite.
 
@@ -88,6 +116,10 @@ Two rules that matter specifically for Chinese text:
 
 - **Body line-height is 1.7, not 1.5.** Chinese glyphs are full-height and dense; 1.5 reads as cramped and is the single most common thing that makes a Chinese UI look unfinished.
 - **Do not letter-space CJK.** Tracking is for Latin caps. Applied to Chinese it looks broken.
+
+**The Use column is a contract, not a suggestion.** The rail headings — 我的档案, 我的记录, 资料夹, 本次检索, 能做什么, 知识库, 工具, 工作流 — were rendered at Micro in the palest ink, which put every section heading 1px *below* and one step *paler than* the body text underneath it. A heading that is smaller and lighter than its own content is inverted hierarchy. They are **H3**, and `components/ui/RailSection.tsx` is the one component that renders them so all eight cannot drift apart. Micro is for badges, tags and dense metadata; Small is for captions and fine print; **a sentence the product says to the user is Body.**
+
+**Weight on Windows differs, and that is accepted.** The stack is a system stack and ships no webfont (a webfont fetched at build time fails or hangs on CI and in mainland China — see `app/globals.css`). Microsoft YaHei has Light/Regular/Bold only, so a requested 600 resolves to real Bold, while PingFang SC on macOS has a true Semibold. Any non-400 weight in this table therefore renders heavier on Windows than on a Mac. Shipping a webfont is the only fix and it is refused for the reason above; pick weights knowing the Windows rendering is the heavier of the two.
 
 ### Space and shape
 
@@ -229,6 +261,19 @@ Both rails collapse below `lg`. The **centre column never exceeds ~720px** — f
 That rule is not a preference, because the right rail's order is load-bearing: it reads top to bottom in the sequence `lib/rag/context.ts` assembles the request — the profile block first, the series summaries inside it, then the reference block the 资料夹 is numbered into, with this turn's retrieval last. A describing section above the profile would break that order, and one below it would separate the profile from the 资料夹. So the four describing sections have exactly one place they can sit, and the left rail is it.
 
 It was the other way round until the owner said the right rail held too much. It held eight sections, four of them one-line descriptions of the agent that belong beside its name — and one of those four was a duplicate: the capability tags under the description and the 「能做什么」 line were the same array printed twice (`components/agent/AgentRails.tsx`).
+
+### The rail section — one idiom, one component
+
+Every section in either rail is the same shape: a heading, an optional count beside it, content under it. **`components/ui/RailSection.tsx` is the only thing that renders it**, because eight copies of that shape had drifted into two different heading sizes and three spacing values.
+
+| Part | Type | Why |
+|---|---|---|
+| Heading | `--text-h3` `--ink` semibold | It must outrank its own content. It used to be Micro (12px) in the palest ink, sitting *below* and *paler than* the Small (13px) `--ink-muted` body it introduced — an inverted hierarchy, and a violation of §2's own type table rather than a style preference |
+| Note (`已填 3 项`, `已记 2 条曲线`) | `--text-small` `--ink-subtle` | It is a count, and a count is a caption. `items-baseline` puts it on the heading's baseline; `flex-wrap` lets it drop to its own line in a 240px rail instead of squeezing the title |
+| Body | caller's choice | A sentence gets `--text-body`; a dense list of retrieved chunks or document rows stays `--text-small` |
+| Fine print (the storage caveat at the foot of 我的档案 / 我的记录 / 资料夹) | `--text-small` `--ink-subtle` | Deliberately **not** Body: it is text *about* the data, not the data, and at Body it would carry the same weight as the measurements the user just took |
+
+`--text-small` is also the floor for Chinese fine print. 12px Chinese across three clauses reads as a grey block whatever its contrast ratio.
 
 ### The tools strip — centre column
 

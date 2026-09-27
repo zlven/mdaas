@@ -24,6 +24,8 @@ export const travel: AgentConfig = {
   name: "Travel Planning Expert",
   nameZh: "AI 旅行行程规划专家",
   icon: "🧭",
+  /** Lake teal — distance, maps, somewhere that is not here. */
+  tint: "#2f6f69",
   category: "life",
   description: "把天数和预算排成一份走得下来的行程，管节奏、交通和行前准备。",
   capabilities: ["行程规划", "节奏把控", "交通衔接", "行前准备"],

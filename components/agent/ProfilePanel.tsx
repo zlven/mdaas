@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { FIELD, LABEL } from "@/components/ui/field";
 import { Notice } from "@/components/ui/Notice";
+import { RailSection } from "@/components/ui/RailSection";
 import { PROFILE_NOTES_KEY } from "@/lib/agents/profile";
 import type { AgentConfig, ProfileField } from "@/lib/agents/types";
 import {
@@ -300,7 +301,20 @@ function ProfileForm({
           // another tab's edit is invisible and a write from this one replaces
           // the record whole. A channel would make the common case look live
           // while leaving the data-losing case exactly where it is.
-          <p className="border-t border-line pt-4 text-micro text-ink-subtle">
+          // `--text-small`, not `--text-body`, and this is a deliberate
+          // departure from the plan's table. The plan grouped this line with the
+          // `Fact` sentences and sent both to Body. They are not the same kind
+          // of text: 「已接入 fitness 的知识库」 describes the agent and is the
+          // content of its section, while this is fine print *about* the data —
+          // §2's own table puts that under Small, "captions, metadata". At Body
+          // the caveat would also carry the same weight as the measurements the
+          // user just took, which is the opposite of what it is for.
+          //
+          // It does move off Micro: 12px Chinese is dense enough that three
+          // clauses of it read as a grey block, and the point of getting
+          // `--ink-subtle` to 4.71:1 was to make this text legible rather than to
+          // leave it unreadably small and compliant.
+          <p className="border-t border-line pt-4 text-small text-ink-subtle">
             档案保存在这个浏览器里，不跨设备同步；清除站点数据会一并清除。多个标签页同时打开时，改动可能互相覆盖。
           </p>
         ) : null}
@@ -321,14 +335,14 @@ function ProfileForm({
     return <Disclosure summary={heading}>{body()}</Disclosure>;
   }
 
-  // The rail's idiom: a small heading with content under it, the same shape as
-  // every other `Fact` beside it. Not a `<details>` — the whole rail is
-  // permanently open, and one accordion among five plain sections reads as a
-  // different kind of thing rather than as a collapsed one.
+  // The rail's idiom, declared once in `RailSection` — and *not* a `<details>`:
+  // the whole rail is permanently open, and one accordion among five plain
+  // sections reads as a different kind of thing rather than as a collapsed one.
+  // The strip variant above is the exception, because there the panel is one row
+  // in a different layout and owes that layout its own disclosure shape.
   return (
-    <div>
-      <h3 className="text-micro font-medium text-ink-subtle">{heading}</h3>
-      <div className="mt-1">{body()}</div>
-    </div>
+    <RailSection title="我的档案" note={summary()}>
+      {body()}
+    </RailSection>
   );
 }

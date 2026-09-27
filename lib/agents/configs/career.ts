@@ -15,6 +15,8 @@ export const career: AgentConfig = {
   name: "Career & Interview Coach",
   nameZh: "AI 职场求职面试专家",
   icon: "🎯",
+  /** Slate blue — prospects, professionalism, a horizon rather than a mood. */
+  tint: "#4c6978",
   category: "work",
   description: "从简历到面试到谈薪，把求职当成一个可以提前准备的流程。",
   capabilities: ["简历优化", "面试准备", "谈薪策略", "职业规划"],

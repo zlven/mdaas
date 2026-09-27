@@ -56,11 +56,31 @@ const AGENTS: AgentConfig[] = [
 function validate(agents: AgentConfig[]): void {
   const seen = new Set<string>();
 
+  // Declared tints, so two agents cannot quietly share a colour. That failure is
+  // the reason this check is here rather than only in `verify:theme.mts`: each
+  // agent's page looks perfectly fine on its own, and the collision is only
+  // visible to someone who opens both. `verify:theme` covers the two properties
+  // a *single* tint can get wrong — contrast behind white text, and perceptual
+  // distance from its neighbours — which are design defects caught at build time,
+  // not silent breakage.
+  const tints = new Map<string, string>();
+
   for (const agent of agents) {
     if (seen.has(agent.id)) {
       throw new Error(`registry: duplicate agent id "${agent.id}"`);
     }
     seen.add(agent.id);
+
+    if (!/^#[0-9a-f]{6}$/.test(agent.tint)) {
+      throw new Error(
+        `registry: "${agent.id}" declares tint ${JSON.stringify(agent.tint)} — it must be a lowercase 7-character hex like "#416f4c"`,
+      );
+    }
+    const owner = tints.get(agent.tint);
+    if (owner !== undefined) {
+      throw new Error(`registry: "${agent.id}" and "${owner}" declare the same tint ${agent.tint}`);
+    }
+    tints.set(agent.tint, agent.id);
 
     if (!/^[a-z][a-z0-9-]*$/.test(agent.id)) {
       throw new Error(

@@ -22,6 +22,8 @@ export const parenting: AgentConfig = {
   name: "Parenting Companion",
   nameZh: "AI 亲子教育陪伴专家",
   icon: "🧒",
+  /** Terracotta — warmth, a home, nothing clinical. */
+  tint: "#92544e",
   category: "life",
   description: "按孩子的年龄段给出沟通和陪伴的方法。不做儿童诊断。",
   capabilities: ["亲子沟通", "习惯培养", "情绪引导", "年龄特点"],

@@ -14,6 +14,8 @@ export const style: AgentConfig = {
   name: "Style & Image Consultant",
   nameZh: "AI 穿搭美学形象设计专家",
   icon: "👗",
+  /** Plum — fabric, texture, the one tint that had to read as taste. */
+  tint: "#934c82",
   category: "life",
   description: "按场合、身材和预算，给出能直接照着买的穿搭方案。",
   capabilities: ["穿搭搭配", "体型分析", "色彩选择", "场合着装"],

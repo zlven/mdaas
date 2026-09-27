@@ -228,9 +228,12 @@ npm run verify:upload    # 上传、注入边界、档案
 npm run verify:series    # 我的记录：曲线几何、上限、摘要预算
 npm run verify:tools     # 小工具的算术
 npm run verify:workflow  # 工作流引擎
+npm run verify:theme     # 配色的对比度下限、十位专家的颜色
 ```
 
-四个 `verify:*` 是 `docs/06_ACCEPTANCE.md` 里**能在 Node 里跑**的那部分，全部是纯函数断言。**需要浏览器的部分它们一条都覆盖不到**，哪些是浏览器项，各段表格里写明了。
+五个 `verify:*` 是 `docs/06_ACCEPTANCE.md` 里**能在 Node 里跑**的那部分，全部是纯函数断言。**需要浏览器的部分它们一条都覆盖不到**，哪些是浏览器项，各段表格里写明了。
+
+`verify:theme` 守住的是配色的硬指标：正文在三档灰上都要过 4.5:1、细线要看得见、十位专家的颜色两两不能太近。**数字达标不等于好看**——三档灰在真实屏幕上舒不舒服、十种颜色像不像各自的领域，这两件事只有眼睛能判断，验收表 J13–J15 留着。
 
 ---
 

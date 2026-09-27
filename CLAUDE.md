@@ -73,29 +73,39 @@ npm run verify:upload    # uploads, the prompt-injection boundary and the profil
 npm run verify:series    # 我的记录 — chart geometry, caps and the summary's budget
 npm run verify:tools     # the tools' arithmetic
 npm run verify:workflow  # the workflow engine
+npm run verify:theme     # the palette's contrast floors and the ten agent tints
 ```
 
-The four `verify:*` scripts are the Node-checkable half of
+The five `verify:*` scripts are the Node-checkable half of
 `docs/06_ACCEPTANCE.md` — `verify:upload` covers §E plus the profile and series
-clauses of I12, `verify:series` covers §M. Everything they assert is a pure
-function. **What needs a browser is not covered by any of them**, and each
-section's table says which items those are.
+clauses of I12, `verify:series` covers §M, `verify:theme` covers J13/J14 and the
+assertable half of J15. Everything they assert is a pure function. **What needs a
+browser is not covered by any of them**, and each section's table says which
+items those are.
 
 **When you add an assertion there, delete the thing it guards and confirm it goes
 red** — and that it goes red *on that assertion*, since an import error is also
-red. A check that cannot fail is worse than no check: it reads as coverage. The
-two times this has happened here were both silent — a `putCount` that a *failed*
-write also leaves unchanged, and a clause check whose marker string already
-appeared elsewhere in every prompt, so `String.includes` passed it
-unconditionally.
+red. A check that cannot fail is worse than no check: it reads as coverage. Four
+times now this has happened here, and three of them were silent:
+
+- a `putCount` that a *failed* write also leaves unchanged;
+- a clause check whose marker string already appeared elsewhere in every prompt,
+  so `String.includes` passed it unconditionally — in a security control;
+- `verify:theme`'s `.icon-plate` check, which matched the `var(--tint)` on the
+  rule's *border* line and so stayed green with the background set to a literal;
+- `verify:theme`'s tint-format and tint-uniqueness checks, which were
+  **unreachable** — `lib/agents/registry.ts` throws at module load, so the script
+  died on the import and never reached them. Assert a rule in one place; a second
+  copy downstream of a thrower is not a second check.
 
 ---
 
 ## Before declaring done
 
-Run the checks in `docs/06_ACCEPTANCE.md`. The four most often skipped and most often false:
+Run the checks in `docs/06_ACCEPTANCE.md`. The five most often skipped and most often false:
 
-- **C4** — actually add a throwaway tenth agent; confirm nothing outside `configs/` needs editing. Run it, don't reason about it.
+- **C4** — actually add a throwaway eleventh agent; confirm nothing outside `configs/` needs editing. Run it, don't reason about it. (It now needs a `tint: "#rrggbb"` line — still only `configs/`, so the check is unchanged in substance, but do not let it go stale.)
 - **E6** — confirm in the network panel that selecting one agent downloads only that agent's index.
 - **H4** — plant a real prompt injection in a knowledge file, rebuild, query it. Reading the prompt is not a test.
 - **J2** — Chinese body text at `line-height: 1.7`.
+- **J15** — open one agent and press Tab: the focus ring must be *that agent's* colour, not teal, and the 发送 button must not turn teal on hover. `verify:theme` checks the source of the mechanism; only the browser checks that it resolved.

@@ -6,8 +6,9 @@ import { AgentIdentity } from "@/components/agent/AgentRails";
 import { Workspace } from "@/components/chat/Workspace";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { getAgent, listAgents } from "@/lib/agents/registry";
 import { tintOf } from "@/components/agent/tint";
+import { agentAccent } from "@/lib/agents/accent";
+import { getAgent, listAgents } from "@/lib/agents/registry";
 
 /**
  * One agent's workspace — docs/01_PRD.md §3.3, docs/03_UI_UX_SPEC.md §5.
@@ -84,7 +85,22 @@ export default async function AgentWorkspacePage({ params }: { params: Promise<{
     <>
       <SiteHeader />
 
-      <main className="mx-auto flex max-w-[1440px] gap-8 px-6 py-10">
+      {/* The one line that makes this agent's page this agent's colour.
+          `agentAccent` hands back `--color-accent` and `--color-accent-hover`,
+          both of which every `bg-accent` / `text-accent` / `border-accent` and
+          the `:focus-visible` rule already read as `var()` — so this re-colours
+          the send button, the active workflow step, the "每次都带上" checkboxes
+          and the focus ring at once, and no component below knows about agents.
+          See `lib/agents/accent.ts`; `verify:theme.mts` guards the mechanism.
+
+          Deliberately *not* on the landing page or `/agents`: those show ten
+          agents side by side, and ten accents in one view is the decoration
+          docs/03_UI_UX_SPEC.md §1 exists to prevent. There, only the icon plates
+          carry colour. */}
+      <main
+        className="mx-auto flex max-w-[1440px] gap-8 px-6 py-10"
+        style={agentAccent(agent.tint) as React.CSSProperties}
+      >
         <AgentIdentity agent={agent} />
         <Workspace agent={agent} />
       </main>

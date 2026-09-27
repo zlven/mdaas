@@ -7,6 +7,8 @@ export const creator: AgentConfig = {
   name: "Creator Growth Expert",
   nameZh: "AI 自媒体爆款运营专家",
   icon: "📱",
+  /** Rose — expression, publishing, a feed. */
+  tint: "#9a4c66",
   category: "growth",
   description: "把账号定位、选题、脚本和复盘，变成一套能执行的增长系统。",
   capabilities: ["账号定位", "选题策划", "标题与钩子", "短视频脚本", "账号诊断"],

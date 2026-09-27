@@ -21,6 +21,15 @@ export const mental: AgentConfig = {
   name: "Mental Wellness Companion",
   nameZh: "AI 心理健康情绪陪伴专家",
   icon: "🧠",
+  /**
+   * Soft violet — inward, quiet. At 0.44 saturation this is the most vivid tint
+   * of the ten, which looks like carelessness for an agent whose brief is calm
+   * and is not: it sits between `study` (262°) and `style` (325°), so
+   * desaturating it slides it into one of them (0.38 → min ΔE 14.1, 0.26 →
+   * 9.9). The position forces the vividness. Calm is carried by whitespace, type
+   * and motion — not by washing a colour out.
+   */
+  tint: "#9641a6",
   category: "health",
   description: "记录情绪、梳理压力、练习正念。不做诊断，高风险情况会引导你寻求专业帮助。",
   capabilities: ["情绪记录", "压力梳理", "正念练习", "睡眠调节"],

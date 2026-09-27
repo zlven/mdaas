@@ -1,4 +1,5 @@
 import { tintOf } from "@/components/agent/tint";
+import { RailSection } from "@/components/ui/RailSection";
 import type { AgentConfig } from "@/lib/agents/types";
 import { TOOL_DEFINITIONS } from "@/lib/tools/types";
 import { WORKFLOW_DEFINITIONS } from "@/lib/workflow/registry";
@@ -30,13 +31,20 @@ import { WORKFLOW_DEFINITIONS } from "@/lib/workflow/registry";
  * leaves `AgentIdentity` a server component.
  */
 
-/** Small heading with content under it — the rail's only idiom. */
+/**
+ * A labelled fact about the agent — `RailSection` with the rail's body type.
+ *
+ * The body is `--text-body`, not `--text-small`: three of these four sections
+ * hold a *sentence* the product is saying to the user (「已接入 fitness 的知识库，
+ * 打开对话时按需下载」), and §2's type table sets Body 15/1.7 as the default for
+ * exactly that. The capability chips override it back down to Micro, which is
+ * the one thing in here that really is a tag.
+ */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h3 className="text-micro font-medium text-ink-subtle">{label}</h3>
-      <div className="mt-1 text-small text-ink-muted">{children}</div>
-    </div>
+    <RailSection title={label} bodyClassName="text-body text-ink-muted">
+      {children}
+    </RailSection>
   );
 }
 
@@ -79,7 +87,10 @@ export function AgentIdentity({ agent }: { agent: AgentConfig }) {
             {agent.name} · <span className="text-ink-subtle">AI 智能体</span>
           </p>
 
-          <p className="mt-4 text-small text-ink-muted">{agent.description}</p>
+          {/* `--text-body`, matching the `Fact` bodies below it. At `--text-small`
+              the description sat *smaller* than the section content it introduces,
+              which is the same inverted hierarchy the rail headings had. */}
+          <p className="mt-4 text-body text-ink-muted">{agent.description}</p>
         </div>
 
         {/* The tags are the capability list, and they are the only place it is
@@ -91,7 +102,7 @@ export function AgentIdentity({ agent }: { agent: AgentConfig }) {
             {agent.capabilities.map((capability) => (
               <li
                 key={capability}
-                className="rounded-[var(--radius-sm)] bg-surface-alt px-2 py-1 text-micro text-ink-muted"
+                className="rounded-[var(--radius-sm)] border border-line bg-surface-alt px-2 py-1 text-micro text-ink-muted"
               >
                 {capability}
               </li>

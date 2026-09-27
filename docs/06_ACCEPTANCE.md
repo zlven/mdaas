@@ -274,7 +274,7 @@ Next to L and for the same reason: a store, its isolation, what it may be inject
 
 | # | Criterion | How to verify |
 |---|---|---|
-| J1 | All colour, type, radius, and spacing values come from `03_UI_UX_SPEC.md` §2 | code review; no ad-hoc hex values |
+| J1 | All colour, type, radius, and spacing values come from `03_UI_UX_SPEC.md` §2 | code review; no ad-hoc hex values. The colour half is now also machine-checked: `npm run verify:theme` parses the `@theme` block and asserts every value's contrast floor, the ten tints' separability, and that the plate and the focus ring read `var(--tint)` / `var(--color-accent)` rather than a literal |
 | J2 | Chinese body text renders at line-height 1.7 | inspect |
 | J3 | No CJK text is letter-spaced | inspect |
 | J4 | Every interactive element is keyboard-reachable and operable | tab through every page |
@@ -286,6 +286,11 @@ Next to L and for the same reason: a store, its isolation, what it may be inject
 | J10 | No emoji in interface copy; agent icons are the only emoji | read the UI |
 | J11 | Error copy says what happened **and what to do** | read every error state |
 | J12 | No dark mode is implemented (out of scope), but tokens are defined for a later swap | inspect |
+| J13 | Every colour clears its contrast floor: 4.5:1 for text on both `bg` and `surface`, 1.30:1 for a hairline on `surface`, 1.12:1 for `surface-alt` on `surface` | `npm run verify:theme` — **plus** the part it cannot do: read three greys on the actual panel. `--ink-subtle` at 4.71:1 is *compliant*; whether it is *comfortable* at 12–13px on a dim laptop is a judgement only eyes can make |
+| J14 | The ten tints are tellable apart, and each looks like its domain | `npm run verify:theme` asserts ΔE76 ≥ 15 (shipped minimum 17.4, `style`/`creator`). **Whether 17.4 reads as two colours or one is a person's call** — put the ten plates side by side and look. Same for "does `finance` look like money": that is the whole reason the tint stopped being hashed, and no script can check it |
+| J15 | On an agent's page the accent is that agent's colour; on the landing page and `/agents` there is no accent override at all | `npm run verify:theme` asserts `app/page.tsx` and `app/agents/page.tsx` mount no accent. **In the browser:** open one agent and confirm the 发送 button, the running workflow step's marker, the 「每次都带上」 checkboxes **and the focus ring** (tab to any control) are all that agent's colour and not teal; hover the button and confirm it does **not** turn teal (the `--color-accent-hover` trap); then open `/agents` and confirm ten differently-tinted plates on an otherwise monochrome grid |
+
+**J13–J15 are the split this repository keeps making.** The ratios, the ΔE and the mechanism are numbers and are asserted; the three judgements above are not, and no amount of green makes them true. J15's focus-ring clause in particular is worth doing rather than reasoning about — the ring is hand-written CSS, not a compiled utility, and "it inherits" is a claim about how custom properties resolve that is much faster to check by pressing Tab than by reading `lib/agents/accent.ts`.
 
 ---
 

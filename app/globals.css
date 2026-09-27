@@ -13,31 +13,61 @@
 
 @theme {
   /* --- Colour -------------------------------------------------------------
-     Near-monochrome on purpose. The interface is not where colour lives —
-     the agents' icons are. One accent, used for the primary action on a
-     screen and for active state. Nowhere else. */
-  --color-bg: #fafaf9;
+     Near-monochrome, and the restraint is the point: colour appears only
+     where it carries information. On a page belonging to one agent, the
+     accent IS that agent's colour — one screen, one agent, one accent, which
+     is the same rule stated twice. The landing page and the directory show
+     ten agents side by side and therefore stay monochrome: ten colours in one
+     view is the decoration this file exists to prevent.
+
+     **Every value here clears a contrast floor, and `verify:theme` asserts
+     it.** The floors are the reason several of these are darker than they
+     look like they need to be; do not lighten one without running the script.
+       ink, ink-muted, ink-subtle    >= 4.5:1 on bg and on surface  (WCAG AA)
+       line, line-strong             >= 1.30:1 on surface (a hairline that reads)
+       accent-fg on accent           >= 4.5:1 */
+  --color-bg: #f7f7f5;
   --color-surface: #ffffff;
-  --color-surface-alt: #f4f4f5;
+  --color-surface-alt: #f0f0ee;
 
   /* Hairlines. Named `line`, not `border`, so the utility reads `border-line`
      rather than the stuttering `border-border`. */
-  --color-line: #e7e7e4;
-  --color-line-strong: #d4d4d1;
+  --color-line: #dcdcd8;
+  --color-line-strong: #c2c2bd;
 
-  /* Text. Named `ink` so the utility reads `text-ink`, not `text-text`. */
+  /* Text. Named `ink` so the utility reads `text-ink`, not `text-text`.
+
+     Three steps that must stay distinguishable: the old `ink-subtle` was
+     2.68:1, so the palest and most-used text in the product — every rail
+     heading, every caption, 84 call sites — was below the AA floor and below
+     even the 3:1 large-text one. Fixing it forced `ink-muted` darker too; on
+     its own, a compliant `ink-subtle` would have overtaken `ink-muted` and
+     collapsed two steps into one. */
   --color-ink: #18181b;
-  --color-ink-muted: #6b6b70;
-  --color-ink-subtle: #9a9aa0;
+  --color-ink-muted: #52525b;
+  --color-ink-subtle: #6e6e76;
 
+  /* The default accent, and the whole of it on every page that is not an
+     agent's. `agentAccent()` in `lib/agents/accent.ts` overrides BOTH of the
+     first two on an agent's page — both, because a custom property whose
+     value contains `var()` is substituted where it is *declared*, so the
+     root's `accent-hover` is already a fixed colour by the time a subtree
+     inherits it. Overriding only `accent` leaves a per-agent button that
+     snaps back to teal on hover. */
   --color-accent: #2f5d62;
   --color-accent-hover: #26494d;
   --color-accent-fg: #ffffff;
 
   /* Status colour appears only on genuine status: the Coming Soon badge,
-     workflow failure, errors. Never for decoration. */
+     workflow failure, errors. Never for decoration.
+
+     `--warning` moved from #a8702b, which was 3.90:1 on the page — under AA. It
+     has no consumer today, which is exactly why it was worth fixing rather than
+     leaving: the next person to reach for it would have been reaching for a
+     colour that fails, and nothing would have said so. Every colour in this
+     block now clears its floor, so using any of them is safe by construction. */
   --color-success: #3f7a4e;
-  --color-warning: #a8702b;
+  --color-warning: #976527;
   --color-danger: #b3453c;
 
   /* --- Type ---------------------------------------------------------------
@@ -138,22 +168,32 @@ body {
 /* ============================================================================
    Agent icon plate — docs/03_UI_UX_SPEC.md §2, §4
 
-   Each agent gets its own hue; everything else on the card stays neutral. That
-   restraint is what keeps nine cards from reading as a toy.
+   `--tint` is the agent's declared colour, passed in as a custom property.
 
-   The hue is derived from the agent id and passed in as `--tint`, rather than
-   stored on the config. A `tint` field would have to be filled in for every new
+   **It used to be a hue derived by hashing the agent id**, justified here on
+   the grounds that "a `tint` field would have to be filled in for every new
    agent, and C4 asks that adding a tenth agent touch nothing but
-   `lib/agents/configs/`. Deriving it also keeps the ten hues evenly spread
-   instead of drifting as agents are added.
+   `lib/agents/configs/`". That reason never held: the config *is* in
+   `lib/agents/configs/`, so declaring a `tint` there touches exactly as much
+   as deriving it. What the hash actually bought was an even spread with no
+   hand-picking, and that is not worth what it costs — a hash cannot know that
+   `finance` should not come out purple.
 
-   Saturation and lightness are fixed here, not derived, so every hue is equally
-   restrained. At 12% opacity a hue's only job is to tell neighbouring cards
-   apart — it is never load-bearing information.
+   So the colour is declared per agent and the derivation is gone. What is
+   still asserted rather than trusted: every tint clears 4.5:1 behind white
+   text, and no two are closer than a perceptual distance of 15
+   (`scripts/verify-theme.mts`). The ten hues are packed — 360 degrees shared
+   ten ways — so "does this look like its domain" and "can these be told
+   apart" genuinely pull against each other, and the second one has to be
+   machine-checked rather than eyeballed.
+
+   The plate stays a wash: at 14% behind the icon it separates neighbouring
+   cards without becoming information of its own.
    ========================================================================= */
 
 .icon-plate {
-  background: color-mix(in srgb, hsl(var(--tint) 42% 46%) 12%, transparent);
+  background: color-mix(in srgb, var(--tint) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tint) 30%, transparent);
 }
 
 /* ============================================================================

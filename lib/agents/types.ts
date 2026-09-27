@@ -118,6 +118,26 @@ export interface AgentConfig {
   nameZh: string;
   /** Emoji. The product carries no illustrations (03_UI_UX_SPEC.md §3). */
   icon: string;
+  /**
+   * The agent's colour, as `#rrggbb` — docs/03_UI_UX_SPEC.md §2.
+   *
+   * Used in exactly two places on the agent's own pages: the icon plate, at 14%
+   * behind the emoji, and the page's accent via `agentAccent()` (the primary
+   * action, the active state, the focus ring). It is deliberately *not* a card
+   * colour — the grid shows ten agents at once and stays monochrome.
+   *
+   * **It used to be hashed from the id**, on the argument that hashing meant
+   * nothing had to be configured per agent. The argument did not hold: this
+   * field is in `lib/agents/configs/` too, so declaring it touches exactly as
+   * much, and only declaring it can know that `finance` should not come out
+   * purple. The colours were then solved rather than chosen — see the block in
+   * `app/globals.css` — and two properties are machine-checked by
+   * `verify:theme.mts`: every tint clears 4.5:1 behind white text, and no two are
+   * within a perceptual distance of 15, because ten hues sharing 360° are packed
+   * tightly enough that "looks like its domain" and "is tellable from its
+   * neighbour" genuinely pull against each other.
+   */
+  tint: string;
   category: AgentCategory;
   /** One sentence, Chinese. Shown on the card. */
   description: string;

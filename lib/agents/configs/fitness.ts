@@ -12,6 +12,8 @@ export const fitness: AgentConfig = {
   name: "Fitness & Exercise Expert",
   nameZh: "AI 形体运动健身专家",
   icon: "🏋",
+  /** Pine green — movement, the outdoors, health without a medical frame. */
+  tint: "#416f4c",
   category: "health",
   description: "把训练目标拆成能坚持下去的周计划。只谈生活方式，不做医疗建议。",
   capabilities: ["训练计划", "周计划编排", "习惯养成", "进度复盘", "营养科普"],

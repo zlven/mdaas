@@ -8,6 +8,7 @@ import { Disclosure } from "@/components/ui/Disclosure";
 import { FIELD, LABEL } from "@/components/ui/field";
 import { formatChars } from "@/components/ui/format";
 import { Notice } from "@/components/ui/Notice";
+import { RailSection } from "@/components/ui/RailSection";
 import { metricBasis } from "@/lib/agents/profile";
 import type { AgentConfig, MetricSuggestion } from "@/lib/agents/types";
 import { pointsFullError, seriesFullError, type AppError } from "@/lib/llm/errors";
@@ -602,7 +603,11 @@ export function SeriesPanel({
           // 永久保存 and 不会丢失 are claims this product cannot make, and it
           // matters more here than there: what is in this panel is a measurement
           // the user took, which the product cannot regenerate for them.
-          <p className="border-t border-line pt-3 text-micro text-ink-subtle">
+          // `--text-small` and not Body, for the reason spelled out at the same
+          // line in `ProfilePanel`: this is fine print about the data, not the
+          // data, and it matters more here than there — what this panel holds is
+          // a measurement the product cannot regenerate for the user.
+          <p className="border-t border-line pt-3 text-small text-ink-subtle">
             记录保存在这个浏览器里，不跨设备同步。清除站点数据、使用无痕模式，或浏览器存储空间不足时，记录可能丢失。
           </p>
         ) : null}
@@ -625,13 +630,14 @@ export function SeriesPanel({
     return <Disclosure summary={heading}>{body()}</Disclosure>;
   }
 
-  // The rail's idiom, the shape every `Fact` beside it uses. Not a `<details>`:
+  // The rail's idiom, declared once in `RailSection` — and *not* a `<details>`:
   // the rail is permanently open, and one accordion among six plain sections
-  // reads as a different kind of thing.
+  // reads as a different kind of thing. (The strip variant above is the
+  // exception: there the panel is one row in the composer's layout and owes that
+  // layout its own disclosure shape.)
   return (
-    <div>
-      <h3 className="text-micro font-medium text-ink-subtle">{heading}</h3>
-      <div className="mt-1">{body()}</div>
-    </div>
+    <RailSection title="我的记录" note={summary()}>
+      {body()}
+    </RailSection>
   );
 }
