@@ -43,7 +43,7 @@ import { TOOL_DEFINITIONS, type ToolId } from "@/lib/tools/types";
  *      not lose a half-filled 会议成本; that is the same latch the previous
  *      per-tool `<details>` had.
  *
- * The right rail still lists tool *names* (`AgentFacts`). That is a description
+ * The left rail still lists tool *names* (`AgentIdentity`). That is a description
  * of the agent, like 能力 or 知识库, and not an operation — which is why the name
  * lives in `lib/tools/types.ts` rather than inside the lazily-loaded component.
  *

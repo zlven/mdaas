@@ -6,49 +6,31 @@ import { WORKFLOW_DEFINITIONS } from "@/lib/workflow/registry";
 /**
  * The workspace's two rails — docs/03_UI_UX_SPEC.md §5.
  *
- * Neither holds state, and `AgentIdentity` is rendered by the page so the
- * identity block is part of the agent's own markup. `AgentFacts` is rendered from
- * `Workspace`, because its 「本次检索」 section is per-turn state that lives there;
- * that pulls this file into the client bundle, which for two static blocks is the
- * cheaper side of the trade.
+ * **The split is the agent on the left and everything else on the right.**
+ * `AgentIdentity` describes the expert: its name, what it can do, what it knows,
+ * and which tools and workflows it carries. `UserRail` holds what the user
+ * authored — the profile, 我的记录, the 资料夹 — and what happened on this turn,
+ * the retrieval. Read the two together and the ordering falls out rather than
+ * being chosen: the right rail is exactly the sequence the request is assembled
+ * in (`lib/rag/context.ts` composes the profile block, the series inside it, then
+ * the reference block the folder is numbered into), and the left rail is the only
+ * place left for lines that describe the agent itself.
  *
- * Four of its sections are **slots** — `retrieval`, `profile`, `series` and
- * `library` — because all four are client-rendered state that lives in
- * `Workspace`. Passing them in keeps this file free of `"use client"`, so the
- * capability and knowledge lines stay in the server component where they belong.
+ * It was the other way round until the owner said the right rail held too much.
+ * It held eight sections, four of them one-line descriptions of the agent that
+ * belong beside its name — and one of those four was a duplicate: the capability
+ * tags under the description and the 「能做什么」 line were the same array printed
+ * twice. Four sections moved, four stayed, and no section changed meaning.
+ *
+ * Neither component holds state. `AgentIdentity` is rendered by the page so the
+ * identity block is part of the agent's own markup; `UserRail` is rendered from
+ * `Workspace`, because its 本次检索 section is per-turn state that lives there.
+ * That makes all four of `UserRail`'s sections **slots** — client-rendered state
+ * passed in from `Workspace` — which keeps this file free of `"use client"` and
+ * leaves `AgentIdentity` a server component.
  */
 
-export function AgentIdentity({ agent }: { agent: AgentConfig }) {
-  return (
-    <aside className="hidden w-60 shrink-0 lg:block">
-      <div className="sticky top-24">
-        <span
-          aria-hidden="true"
-          className="icon-plate flex size-10 items-center justify-center rounded-[var(--radius)] text-h2"
-          style={{ "--tint": tintOf(agent) } as React.CSSProperties}
-        >
-          {agent.icon}
-        </span>
-
-        <h1 className="mt-4 text-h2 font-semibold text-ink">{agent.nameZh}</h1>
-        <p className="text-small text-ink-muted">
-          {agent.name} · <span className="text-ink-subtle">AI 智能体</span>
-        </p>
-
-        <p className="mt-4 text-small text-ink-muted">{agent.description}</p>
-
-        <ul className="mt-6 flex flex-wrap gap-2">
-          {agent.capabilities.map((capability) => (
-            <li key={capability} className="rounded-[var(--radius-sm)] bg-surface-alt px-2 py-1 text-micro text-ink-muted">
-              {capability}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </aside>
-  );
-}
-
+/** Small heading with content under it — the rail's only idiom. */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -59,23 +41,101 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 }
 
 /**
- * The right rail. Sections with nothing in them are omitted rather than shown
- * empty — a "工具：无" line is noise that makes the product look unfinished. The
- * condition is on the value rather than hardcoded, which is what let this file
- * stay untouched as `tools` went from empty everywhere, to three agents, to all
- * ten. The workflow section below is where it still earns its keep.
+ * The left rail: who this expert is.
  *
- * `retrieval` is a slot: the panel below it is client-rendered because what was
- * retrieved is per-turn state.
+ * The describing sections below the identity block are **omitted when empty
+ * rather than shown empty** — a "工具：无" line is noise that makes the product
+ * look unfinished. The condition is on the value rather than hardcoded, which is
+ * what let this file stay untouched as `tools` went from empty everywhere, to
+ * three agents, to all ten. The workflow section is where it still earns its
+ * keep: six of the ten declare none, and 「暂不支持」 on six cards would read as
+ * an unfinished product rather than as ten different specialisms.
+ *
+ * `tools` and `workflows` hold ids, so their labels are looked up — joining
+ * either array directly would print slugs like "food-tef" or
+ * "office-meeting-summary", which is a bug this rail has already shipped once.
  */
-export function AgentFacts({
-  agent,
+export function AgentIdentity({ agent }: { agent: AgentConfig }) {
+  return (
+    <aside className="hidden w-60 shrink-0 lg:block">
+      {/* The same latch as the right rail below, and here it was latent for
+          longer: a name, a description and a tag row are short enough never to
+          have overflowed, and four describing sections are not. A sticky element
+          taller than the viewport pins its top and puts its bottom permanently
+          out of reach — the page scrolls, the rail does not, and 工作流 can never
+          be read. The focus-ring caveat below applies here too. */}
+      <div className="sticky top-24 max-h-[calc(100vh-7rem)] space-y-6 overflow-y-auto">
+        <div>
+          <span
+            aria-hidden="true"
+            className="icon-plate flex size-10 items-center justify-center rounded-[var(--radius)] text-h2"
+            style={{ "--tint": tintOf(agent) } as React.CSSProperties}
+          >
+            {agent.icon}
+          </span>
+
+          <h1 className="mt-4 text-h2 font-semibold text-ink">{agent.nameZh}</h1>
+          <p className="text-small text-ink-muted">
+            {agent.name} · <span className="text-ink-subtle">AI 智能体</span>
+          </p>
+
+          <p className="mt-4 text-small text-ink-muted">{agent.description}</p>
+        </div>
+
+        {/* The tags are the capability list, and they are the only place it is
+            printed. The right rail used to carry the same array a second time as
+            a joined 「能做什么」 line; the tags are the better rendering of it and
+            they belong under the name, so the line is gone rather than moved. */}
+        <Fact label="能做什么">
+          <ul className="flex flex-wrap gap-2">
+            {agent.capabilities.map((capability) => (
+              <li
+                key={capability}
+                className="rounded-[var(--radius-sm)] bg-surface-alt px-2 py-1 text-micro text-ink-muted"
+              >
+                {capability}
+              </li>
+            ))}
+          </ul>
+        </Fact>
+
+        <Fact label="知识库">
+          {agent.knowledgeBase === null
+            ? "未接入"
+            : `已接入 ${agent.knowledgeBase} 的知识库，打开对话时按需下载`}
+        </Fact>
+
+        {/* The controls live in the centre column; this line only describes the
+            agent — which is why the labels live in `lib/tools/types.ts` rather
+            than inside the lazily-loaded components. */}
+        {agent.tools.length > 0 ? (
+          <Fact label="工具">{agent.tools.map((id) => TOOL_DEFINITIONS[id].label).join(" · ")}</Fact>
+        ) : null}
+
+        {/* `Record<WorkflowId, WorkflowDefinition>` is total, so there is no
+            unresolvable case to fall back from. */}
+        {agent.workflows.length > 0 ? (
+          <Fact label="工作流">{agent.workflows.map((id) => WORKFLOW_DEFINITIONS[id].label).join(" · ")}</Fact>
+        ) : null}
+      </div>
+    </aside>
+  );
+}
+
+/**
+ * The right rail: the user's own standing data, then this turn.
+ *
+ * Every section is a slot rendered by `Workspace`, because all four are
+ * client-rendered state that lives there. The order they are placed in is the
+ * order the request is assembled — see the header above, and the per-section
+ * notes below, which are the reason the order is not free to change.
+ */
+export function UserRail({
   retrieval,
   profile,
   series,
   library,
 }: {
-  agent: AgentConfig;
   retrieval: React.ReactNode;
   profile: React.ReactNode;
   series: React.ReactNode;
@@ -86,9 +146,12 @@ export function AgentFacts({
       {/* `max-h` + `overflow-y-auto` rather than a bare `sticky top-24`.
           A sticky element taller than the viewport pins its top and puts its
           bottom permanently out of reach — the page scrolls, the rail does not,
-          and the last section can never be read. Four sections was already close
-          to the viewport at 800px; 我的记录 makes it the normal case rather than
-          the edge case, so it is fixed here rather than after the first report.
+          and the last section can never be read. These four are the tall ones:
+          the profile form, the chart with its entry form and point list, the
+          folder, and the retrieval. 我的记录 is what made the overflow the normal
+          case rather than the edge case, so it is fixed here rather than after
+          the first report. (The four one-line describing sections that used to
+          sit above them moved to the left rail, which carries the same latch.)
 
           The focus ring is the known cost: `outline-offset: 2px` is clipped at a
           scroll container's edge, so a control flush against the left or right
@@ -97,61 +160,27 @@ export function AgentFacts({
           the headings above, so the offsets stay and the ring stays slightly
           clipped — it is a focus ring that is 2px short, not a missing one. */}
       <div className="sticky top-24 max-h-[calc(100vh-7rem)] space-y-6 overflow-y-auto">
-        <Fact label="能做什么">{agent.capabilities.join(" · ")}</Fact>
+        {/* First, because the profile block is composed before the reference
+            block, and the series summaries are inserted **inside** it — between
+            the declared fields and 补充说明. That is why 我的记录 is the section
+            directly below this one rather than after the 资料夹, and why the
+            whole rail is now one sequence read top to bottom.
 
-        <Fact label="知识库">
-          {agent.knowledgeBase === null
-            ? "未接入"
-            : `已接入 ${agent.knowledgeBase} 的知识库，打开对话时按需下载`}
-        </Fact>
-
-        {/* `tools` holds ids, so the label has to be looked up — joining the
-            array directly would print slugs like "food-tef". The controls live
-            in the centre column; this line only describes the agent. */}
-        {agent.tools.length > 0 ? (
-          <Fact label="工具">{agent.tools.map((id) => TOOL_DEFINITIONS[id].label).join(" · ")}</Fact>
-        ) : null}
-
-        {/* The same rule as `tools` directly above, which this line broke: the
-            array holds ids, so joining it prints 「工作流：office-meeting-summary」.
-            `Record<WorkflowId, WorkflowDefinition>` is total, so there is no
-            unresolvable case to fall back from.
-
-            An agent with no workflow renders nothing at all rather than saying
-            so — the rule this file already states for its other sections. Six
-            of the ten have none, and 「暂不支持」 on six cards would read as an
-            unfinished product rather than as ten different specialisms. */}
-        {agent.workflows.length > 0 ? (
-          <Fact label="工作流">{agent.workflows.map((id) => WORKFLOW_DEFINITIONS[id].label).join(" · ")}</Fact>
-        ) : null}
-
-        {/* Not a `Fact`: it is the one section here the user operates rather
-            than reads. It sits with the describing sections anyway, because
-            that is what it is — standing facts about the user, alongside what
-            the agent can do and what it knows (03_UI_UX_SPEC.md §5). The
-            collapsible controls are all in the centre column; this is not one
-            of them. */}
+            Not a `Fact`: it is the one section here the user operates rather
+            than reads. The collapsible controls are all in the centre column;
+            this is not one of them. */}
         {profile}
 
-        {/* 我的记录 sits between the profile and the 资料夹, and the order is the
-            request's: the owner asked for the curve, and it is the nearer relative
-            of the two. Both are standing durable data the user authored, so both
-            are in the profile *block* of the prompt — `seriesEntries` inserts the
-            summaries between the declared fields and 补充说明, which is to say
-            above the whole reference block, and this is that same sequence read
-            top to bottom. The rail's order and the block's order are one decision
+        {/* The rail's order and the profile block's order are one decision
             stated twice, so changing either means changing both. */}
         {series}
 
-        {/* The 资料夹 sits beside the profile for the same reason the profile sits
-            here at all: both are standing material the user opted to carry,
-            against `retrieval` below, which is what happened on this turn.
-
-            The order is the reference block's order, not a preference. Within
-            that block the folder is numbered ahead of the knowledge base
-            (`lib/rag/context.ts`), so the rail reads in the sequence the citations
-            do. The profile is not in that sequence — it is its own block, ahead of
-            the whole reference block — which is why it is above both. */}
+        {/* Where the reference block puts it: the folder is numbered ahead of
+            the knowledge base (`lib/rag/context.ts`), so the rail reads in the
+            sequence the citations do. It sits under the profile for the same
+            reason the profile is here at all — both are standing material the
+            user opted to carry, against `retrieval` below, which is what
+            happened on this turn rather than what the user filed. */}
         {library}
 
         {retrieval}

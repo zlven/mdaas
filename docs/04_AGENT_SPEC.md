@@ -337,7 +337,7 @@ An unknown id is closed off **by the type, in both directions**: `tools` is `rea
 
 **Number formatting.** A tool's own number is **not grouped and not symbolised** — `1200 元`, not `¥ 1,200` (`03_UI_UX_SPEC.md` §5). `toLocaleString` is banned outright because its output depends on the runtime's ICU data, so the same input renders differently on a different machine. This is worth flagging because 应急储备金 and offer 折算 produce five- and six-digit numbers where the ungrouped form is genuinely harder to read; changing that means changing the spec rule first, not quietly reaching for `toLocaleString` in one tool.
 
-**Placement.** Tools render in the workspace's centre column (`01_PRD.md` §3.3, `03_UI_UX_SPEC.md` §5). They hold *drafts* — a half-filled 会议成本 is component state — so they are mounted exactly once, and the centre column is the only zone present at every breakpoint. The right rail lists tool *names* as part of describing the agent; it does not host the controls. The profile is not a tool and does not share this position: it sits in the right rail, and §6 says why that is safe.
+**Placement.** Tools render in the workspace's centre column (`01_PRD.md` §3.3, `03_UI_UX_SPEC.md` §5). They hold *drafts* — a half-filled 会议成本 is component state — so they are mounted exactly once, and the centre column is the only zone present at every breakpoint. The left rail lists tool *names* as part of describing the agent; it does not host the controls. The profile is not a tool and does not share this position either: it sits in the right rail, and §6 says why that is safe.
 
 ---
 

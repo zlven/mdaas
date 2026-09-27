@@ -189,46 +189,46 @@ Cards are **product modules**, not dashboard widgets.
 Three zones.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ ← 返回      💼 AI 全能办公专家          [设置]  [清空对话]     │
-├────────────┬────────────────────────────────┬────────────────┤
-│            │ [会议成本] [口播时长]           │   能力          │
-│  Agent     │ ┌────────────────────────────┐ │   ────         │
-│  identity  │ │ 按人数、时长和平均时薪，算出 │ │   知识库        │
-│            │ │ 这场会实际花掉多少钱。       │ │   工具          │
-│  icon      │ │ ────────────────────────── │ │   工作流        │
-│  description│ └────────────────────────────┘ │   ────         │
-│            │   ┌──────────────────────┐     │   我的档案       │
-│  tags      │   │ user message         │     │   身高(cm)      │
-│            │   └──────────────────────┘     │   [ 175      ]  │
-│            │   ┌──────────────────────┐     │   补充说明       │
-│            │   │ assistant message    │     │   [          ]  │
-│            │   │ (streaming)          │     │   [ 清空档案 ]  │
-│            │   └──────────────────────┘     │   ────         │
-│            │                                │   我的记录 · 1 条曲线│
-│            │                                │   [体重] [睡眠] │
-│            │                                │   ╱‾╲__╱‾╲      │
-│            │                                │   ☑ 每次都带上  │
-│            │                                │   ────         │
-│            │                                │   资料夹 · 2/5  │
-│            │                                │   简历.pdf  ✕   │
-│            │                                │   ☑ 每次都带上  │
-│            │                                │   ────         │
-│            │                                │   本次检索       │
-│            │                                │   · chunk 1    │
-│            │                                │   · chunk 2    │
-├────────────┴────────────────────────────────┴────────────────┤
-│ [📎 附件] [⚡ 工作流]                              [ 发送 → ] │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ ← 返回      💼 AI 全能办公专家               [设置]  [清空对话]  │
+├────────────┬────────────────────────────────────┬────────────────┤
+│ Agent      │ [会议成本] [口播时长]              │ 我的档案       │
+│ identity   │ ┌────────────────────────────────┐ │ 身高(cm)       │
+│            │ │ 按人数、时长和平均时薪，算出   │ │ [ 175      ]   │
+│ icon       │ │ 这场会实际花掉多少钱。         │ │ 补充说明       │
+│ description│ │ ────────────────────────────── │ │ [          ]   │
+│            │ └────────────────────────────────┘ │ [ 清空档案 ]   │
+│ tags       │   ┌────────────────────────┐       │ ────────────   │
+│            │   │ user message           │       │ 我的记录 1 条  │
+│ 能做什么   │   └────────────────────────┘       │ [体重] [睡眠]  │
+│            │   ┌────────────────────────┐       │ ╱‾╲__╱‾╲       │
+│ 知识库     │   │ assistant message      │       │ ☑ 每次都带上   │
+│            │   │ (streaming)            │       │ ────────────   │
+│ 工具       │   └────────────────────────┘       │ 资料夹 2/5     │
+│            │                                    │ 简历.pdf  ✕    │
+│ 工作流     │                                    │ ☑ 每次都带上   │
+│            │                                    │ ────────────   │
+│            │                                    │ 本次检索       │
+│            │                                    │ · chunk 1      │
+│            │                                    │ · chunk 2      │
+├────────────┴────────────────────────────────────┴────────────────┤
+│ [📎 附件] [⚡ 工作流]                                 [ 发送 → ]  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 | Zone | Width | Contents |
 |---|---|---|
-| Left rail | 240px | Icon, names, description, capability tags |
+| Left rail | 240px | Icon, names, description, capability tags, **能做什么**, **知识库**, **工具**, **工作流** |
 | Centre | flexible | Conversation, max-width ~720px, centred |
-| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **the profile**, **我的记录**, **the 资料夹**, and what was retrieved this turn |
+| Right rail | 280px | **The profile**, **我的记录**, **the 资料夹**, and what was retrieved this turn |
 
 Both rails collapse below `lg`. The **centre column never exceeds ~720px** — full-width prose on a 1440px monitor is unreadable.
+
+**The split between the rails is the agent on the left and everything else on the right.** The left rail describes the expert: its name, what it can do, what it knows, which tools and workflows it carries. The right rail holds what the user authored and what happened on this turn.
+
+That rule is not a preference, because the right rail's order is load-bearing: it reads top to bottom in the sequence `lib/rag/context.ts` assembles the request — the profile block first, the series summaries inside it, then the reference block the 资料夹 is numbered into, with this turn's retrieval last. A describing section above the profile would break that order, and one below it would separate the profile from the 资料夹. So the four describing sections have exactly one place they can sit, and the left rail is it.
+
+It was the other way round until the owner said the right rail held too much. It held eight sections, four of them one-line descriptions of the agent that belong beside its name — and one of those four was a duplicate: the capability tags under the description and the 「能做什么」 line were the same array printed twice (`components/agent/AgentRails.tsx`).
 
 ### The tools strip — centre column
 
@@ -274,8 +274,9 @@ Not a strip, and not in the centre column:
 │   [ 清空档案 ]                                 │
 ```
 
-- **It is not collapsed.** Every other rail section (能力, 知识库, 工具, 工作流) is permanently open, and one accordion among them reads as a different kind of thing. The rail's idiom is a small heading with content under it, and the profile adopts it. The status (已填 3 项) goes on the heading line.
+- **It is not collapsed.** Every other rail section is permanently open — the three below it here, and the four describing sections in the left rail — and one accordion among them reads as a different kind of thing. The rail's idiom is a small heading with content under it, and the profile adopts it. The status (已填 3 项) goes on the heading line.
 - **Why it is no longer in the centre column.** It is not an operation — it is standing facts about the user, which is what the rest of the rail already holds. The tools are operations and they hold drafts, so they must exist exactly once and the centre column is the only zone present at every breakpoint. The profile holds no draft: every input is controlled straight from the store's snapshot, so it is safe to exist twice. See the mounting rule below.
+- **It is the first thing in the rail, and the rail holds nothing above it.** Everything that used to sit above it described the agent rather than the request, and moved to the left rail.
 - **Below `lg` the rail is gone, so the profile falls back to a collapsed strip in the centre column.** Otherwise I9 (viewable, editable, deletable) would hold on a desktop and fail on a phone. This is the same duplication `RetrievalPanel` uses, and it costs one thing that must not be forgotten: **the two instances must not share element ids**, or the `<label for>` resolves to whichever is earlier in the DOM — the hidden one. `components/agent/ProfilePanel.tsx` therefore takes an `idPrefix` and both call sites pass a distinct one.
 - **Loading is not empty.** While the profile is being read it says 读取中. Rendering the empty state first and filling it in a frame later tells the user their data is gone.
 - The form reuses §8's field styling and carries a two-step 清空档案 confirmation. Its footer states that the profile is stored in this browser, does not sync across devices, and may be overwritten when several tabs are open.
@@ -337,7 +338,7 @@ Not a strip, and not in the centre column:
 │   记录保存在这个浏览器里，不跨设备同步。…         │
 ```
 
-- **It sits between the profile and the 资料夹, and the order is the request's order rather than a preference.** All three are standing data the user authored, so all three are read at send time and all three sit above 本次检索. Among them the sequence is the prompt's: the profile block is composed first, the series summaries are inserted **inside** it, and the reference block the 资料夹 is numbered into comes after. The rail reads top to bottom in the order the request is assembled, so changing one means changing both (`components/agent/AgentRails.tsx`).
+- **It sits between the profile and the 资料夹, and the order is the request's order rather than a preference.** All three are standing data the user authored, so all three are read at send time and all three sit above 本次检索. Among them the sequence is the prompt's: the profile block is composed first, the series summaries are inserted **inside** it, and the reference block the 资料夹 is numbered into comes after. The rail is now exactly that sequence and nothing else — these four sections are all it holds — so changing one means changing both (`components/agent/AgentRails.tsx`).
 - **The chart is a mirror, not a coach, and that is a rule rather than a style.** It draws the points the user entered and the geometry needed to place them, and nothing the product computed about their meaning. No target or goal line; no healthy/normal band, shaded region or percentile curve; no average, median or trend line; no direction-dependent colour, delta chip or percentage change; no projection; no BMI, growth percentile or 达标 wording; no word of praise or alarm. `--success`, `--warning` and `--danger` do not appear here. Permitted: count, date range, min–max, latest value and date, and the axis-truncation statement. `04_AGENT_SPEC.md` §9 carries the four reasons, `mental`'s being the one with a safety consequence — the score is emotional intensity, so up is worse.
 - **The caption is a requirement, not decoration.** `knowledge/office/data-analysis.md` states the rules the product already owns — 标题, 单位, 时间范围, 数据来源, and that a truncated y-axis 「需要明确标注」 — so every chart carries the series name as its heading, the 单位 · 范围 · 条数 line, 「纵轴自 60 起，不从 0 开始」 whenever the axis does not contain zero (「纵轴到 4000 止，不含 0」 the other way), 「来源：你自己在这个浏览器里的记录」, and the config's 口径 beneath it. The same sentence is the `<svg>`'s `aria-label`, so the chart is not silent to a screen reader.
 - **One series at a time, selected by a chip row.** Two units cannot share an axis, and overlaying two series would need a second colour, which §2 does not allow. The chip carries `aria-pressed`, not `aria-expanded`: this selects, it does not disclose. The suggestion chips that start a new series are a separate row above, and a suggestion already taken is shown disabled as 「体重 · 已记」 rather than hidden.

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { AgentFacts } from "@/components/agent/AgentRails";
+import { UserRail } from "@/components/agent/AgentRails";
 import { LibraryPanel } from "@/components/agent/LibraryPanel";
 import { ProfileNudge, ProfilePanel } from "@/components/agent/ProfilePanel";
 import { SeriesPanel } from "@/components/agent/SeriesPanel";
@@ -811,9 +811,9 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
 
       {/* The right rail is rendered from here rather than by the page because its
           「本次检索」 section is per-turn state this component owns. `AgentIdentity`
+          — the left rail, which describes the expert rather than the request —
           stays with the page, which needs no state for it. */}
-      <AgentFacts
-        agent={agent}
+      <UserRail
         retrieval={panel}
         profile={<ProfilePanel agent={agent} variant="rail" idPrefix="rail" />}
         series={<SeriesPanel agent={agent} variant="rail" idPrefix="rail" />}

@@ -38,10 +38,10 @@ export interface ToolDefinition {
 
 /**
  * Display metadata, kept here rather than inside the components because two
- * places that do not render React need it: `AgentFacts`, which lists tool names
- * as part of describing the agent, and any future summary UI. If the label lived
- * in the component, `AgentFacts` would have to import a lazily-loaded component
- * to print a heading — which would defeat the lazy loading entirely.
+ * places that do not render React need it: `AgentIdentity`, which lists tool
+ * names as part of describing the agent, and any future summary UI. If the label
+ * lived in the component, `AgentIdentity` would have to import a lazily-loaded
+ * component to print a heading — which would defeat the lazy loading entirely.
  */
 export const TOOL_DEFINITIONS: Record<ToolId, ToolDefinition> = {
   "food-tef": {

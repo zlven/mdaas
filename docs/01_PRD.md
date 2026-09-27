@@ -100,19 +100,19 @@ Filters are **not** in the MVP — ten cards are few enough to scan without one,
 ┌────────────────────────────────────────────────────────────┐
 │ ← Back        💼 Office Expert          [Settings] [Clear] │
 ├──────────────┬──────────────────────────────┬──────────────┤
-│              │ [会议成本] [口播时长]          │ Capabilities │
-│  Agent       │ ┌──────────────────────────┐ │              │
-│  identity    │ │ 按人数、时长和平均时薪…    │ │ Knowledge    │
-│              │ │ ──────────────────────── │ │ Tools        │
-│  description │ └──────────────────────────┘ │ Workflow     │
+│              │ [会议成本] [口播时长]          │ 我的档案      │
+│  Agent       │ ┌──────────────────────────┐ │ 身高(cm)[175]│
+│  identity    │ │ 按人数、时长和平均时薪…    │ │ ──────────── │
+│              │ │ ──────────────────────── │ │  资料夹 2/5  │
+│  description │ └──────────────────────────┘ │ ☑每次都带上  │
 │              │                              │ ──────────── │
-│  tags        │      Conversation            │ 我的档案      │
-│              │                              │ 身高(cm)[175]│
-│              │                              │ ──────────── │
-│              │                              │  资料夹 2/5  │
-│              │                              │ ☑每次都带上  │
-│              │                              │ ──────────── │
-│              │                              │  本次检索     │
+│  tags        │      Conversation            │  本次检索     │
+│  Capabilities│                              │              │
+│  Knowledge   │                              │              │
+│  Tools       │                              │              │
+│  Workflow    │                              │              │
+│              │                              │              │
+│              │                              │              │
 ├──────────────┴──────────────────────────────┴──────────────┤
 │ [📎 Attach] [⚡ Workflow]                     [Send →]      │
 └────────────────────────────────────────────────────────────┘
@@ -123,7 +123,9 @@ Right rail collapses below `lg`. Below `md`, chat takes the full viewport and th
 **The tools strip sits at the top of the centre column; the profile sits in the right rail.** The two are not the same kind of thing, which is why they no longer share a position:
 
 - The **tools** are operations, and an operation belongs where the work happens. They also hold *drafts* — a half-filled 会议成本 is component state, not stored state — so they must exist exactly once in the DOM, and the centre column is the only zone present at every breakpoint.
-- The **profile** is not an operation. It is standing facts about the user, alongside what the agent can do and what it knows — all of which describe this conversation's context and none of which the user operates. It is stored state read straight from the store, with no draft, so it *can* exist twice; below `lg`, where the rail is gone, it falls back to a collapsed strip in the centre column so it stays reachable at every width (`03_UI_UX_SPEC.md` §5).
+- The **profile** is not an operation. It is standing facts about the user, and it is the first of the right rail's four sections. It is stored state read straight from the store, with no draft, so it *can* exist twice; below `lg`, where the rail is gone, it falls back to a collapsed strip in the centre column so it stays reachable at every width (`03_UI_UX_SPEC.md` §5).
+
+**The two rails split the agent from everything else.** The **left** rail carries the agent's name and description and then four lines describing it — 能做什么, 知识库, 工具, 工作流 — because that is what they are: facts about the expert, sitting beside its name. The **right** rail carries only the profile, 我的记录, the 资料夹, and what was retrieved this turn. That split is forced rather than chosen: the right rail reads top to bottom in the order the request is assembled, so a describing section above the profile would break the order and one below it would separate the profile from the 资料夹.
 
 **The 资料夹 is the third thing in the rail, and it is neither of those two.** It is the user's own material kept for later — standing context like the profile, but *content* like an attachment, and it is the one section there the user adds files to. Its full contract is `04_AGENT_SPEC.md` §8; the two rules worth stating here are that it outlives 清空对话 by design, and that the 「每次都带上」 toggle is a cost control rather than a preference, because the user pays for every message with their own key.
 
