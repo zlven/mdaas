@@ -17,6 +17,8 @@
     "verify:workflow": "node --experimental-transform-types --no-warnings scripts/verify-workflow.mts",
     "preverify:tools": "npm run build:assets",
     "verify:tools": "node --experimental-transform-types --no-warnings scripts/verify-tools.mts",
+    "preverify:series": "npm run build:assets",
+    "verify:series": "node --experimental-transform-types --no-warnings scripts/verify-series.mts",
     "build:assets": "node --experimental-strip-types --no-warnings scripts/build-assets.mts"
   },
   "dependencies": {

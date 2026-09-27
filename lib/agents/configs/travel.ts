@@ -67,6 +67,18 @@ export const travel: AgentConfig = {
   knowledgeBase: "travel",
   // 时差换算 is the one thing here the browser can answer instantly and exactly.
   // The rest of the domain is judgement, which is the agent's job, not a widget's.
+  // From `knowledge/travel/旅行预算构成.md`. One number per trip rather than per
+  // day, because the document's own framing is that a trip's cost is decided
+  // before it starts — by the transport and the nights, not by the spending
+  // during it.
+  metrics: [
+    {
+      key: "trip-cost",
+      label: "每次旅行花费",
+      unit: "元",
+      basis: "一趟旅行的总花费：交通 + 住宿 + 门票 + 餐饮",
+    },
+  ],
   tools: ["time-diff"],
   workflows: ["travel-itinerary"],
   modelProfile: "balanced",

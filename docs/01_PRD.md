@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Doc version | 1.0 |
-| Last updated | 2026-09-26 |
+| Last updated | 2026-09-27 |
 | Scope | MVP demo only |
 | Read with | `00_PRODUCT_BRIEF.md` (framing), `02_TECH_SPEC.md` (binding architecture) |
 
@@ -47,6 +47,7 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | 12 | Per-agent profile — structured fields the **config** declares, plus one free-text 补充说明 the user writes, stored in this browser (`04_AGENT_SPEC.md` §6) |
 | 13 | Per-agent instant tools — small client-side utilities usable without a conversation (`04_AGENT_SPEC.md` §7) |
 | 14 | Per-agent 资料夹 — up to 5 documents the user saves from an attachment, kept in this browser and **independent of 清空对话**, each with its own 「每次都带上」 toggle (`04_AGENT_SPEC.md` §8) |
+| 15 | Per-agent 我的记录 — up to 5 numeric series the user names (or one-taps from the agent's suggestions), each a number per date, kept in this browser, **independent of 清空对话**, drawn as a line chart, with its own 「每次都带上」 toggle and a bounded summary that rides in the profile block (`04_AGENT_SPEC.md` §9) |
 
 ### Explicitly out of scope
 

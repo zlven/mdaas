@@ -49,6 +49,12 @@ export const style: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.style,
   knowledgeBase: "style",
+  // From `knowledge/style/预算与购物决策.md`. Net of returns, because that
+  // document's whole argument is about the real cost of what was kept rather than
+  // the headline cost of what was ordered.
+  metrics: [
+    { key: "clothing-spend", label: "置装支出", unit: "元", basis: "当月买衣服鞋包的总花费，退掉的那部分扣掉" },
+  ],
   tools: ["cost-per-wear"],
   workflows: [],
   modelProfile: "creative",

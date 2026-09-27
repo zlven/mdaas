@@ -34,6 +34,25 @@ export const fitness: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.fitness,
   knowledgeBase: "fitness",
+  // 体重 appears here *and* as a profile field above, which is not a duplicate.
+  // The profile holds 「现在是多少」 — a standing fact the agent reads on every
+  // message. The series holds 「这段时间怎么变的」 — a curve the user records and
+  // the agent reads as a trend. Both are worth having and they answer different
+  // questions.
+  //
+  // 身高 is deliberately absent, although a fitness tracker is the obvious place
+  // for it. It is not in `knowledge/fitness/` anywhere, it does not move on the
+  // timescale someone would chart, and a growth curve is the comparison
+  // `parenting`'s corpus avoids. The user can still create it by hand — the
+  // difference is between what we *suggest* and what we *permit*, and only the
+  // first carries a claim that the number is worth watching.
+  metrics: [
+    { key: "weight", label: "体重", unit: "kg", basis: "早起空腹、同一台秤，每次记一个数" },
+    // `program-design.md` asks a plan to 「留出一个衡量进展的指标，例如同一动作在
+    // 相同次数下能够使用的负荷」. Total volume is that idea made into one number
+    // per session.
+    { key: "volume", label: "训练量", unit: "kg", basis: "每次训练的总容量：组数 × 次数 × 重量，全部动作相加" },
+  ],
   tools: ["food-tef"],
   workflows: ["fitness-plan"],
   modelProfile: "balanced",

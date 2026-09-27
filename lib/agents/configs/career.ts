@@ -50,6 +50,12 @@ export const career: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.career,
   knowledgeBase: "career",
+  // `求职渠道与流程节奏.md` names 「每周投递的份数」 as the quantifiable progress
+  // metric in a job search, which is the one part of that process the applicant
+  // actually controls.
+  metrics: [
+    { key: "applications", label: "每周投递", unit: "份", basis: "这一周投出去的简历份数，按投递当天计" },
+  ],
   tools: ["offer-compare"],
   workflows: [],
   modelProfile: "reasoning",

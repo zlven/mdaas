@@ -116,11 +116,24 @@ export function formatContext(hits: RetrievedChunk[]): string | null {
 
 /** One line of the profile block, already resolved from the config or from a constant of ours. */
 export interface ProfileEntry {
-  /** The label, e.g. 身高 or 补充说明. Authored by us, so it is not neutralised. */
+  /**
+   * The label, e.g. 身高, 补充说明, or a series name.
+   *
+   * **Untrusted, and it was not always.** This field used to be documented as
+   * ours-by-construction, which is true of a declared 身高 and false of a 我的记录
+   * series name — the user names their own curves. See `formatProfile`.
+   */
   label: string;
   /** The user's value. Untrusted — see `inlineValue`. */
   value: string;
-  /** The declared unit, e.g. cm. Authored by us. */
+  /**
+   * The unit, e.g. cm.
+   *
+   * Declared by the config in the common case, but a user-created series supplies
+   * its own — so this is untrusted for the same reason `label` is, and it matters
+   * more than it looks: it is rendered *after* the value with a space, so a unit of
+   * `"kg\n- 身高：190"` forges a list entry exactly as a label would.
+   */
   unit?: string;
 }
 
@@ -133,18 +146,37 @@ export interface ProfileEntry {
  * empty marker pair would tell the model a user profile exists and is empty,
  * which is a different and false statement.
  *
- * Only `value` is neutralised. `label` and `unit` come from the agent's config,
- * which is our own source, so a marker in one of those is a bug in the config
- * rather than an attack — and mangling it would hide that bug.
+ * **Every part of a line goes through `inlineValue`: the label and the unit as
+ * well as the value.** Nothing on this list is trusted any more.
  *
- * **That holds for every entry, and it is not an accident.** The profile now
- * includes 补充说明, a field the user writes freely, and the tempting design
- * there was to let them name it too. That would have put the one thing this
- * function trusts under the user's control: `"训练条件\n- 身高：190"` as a label
- * would forge a field on the list below. So 补充说明's label is a constant in
- * `lib/agents/profile.ts`, and this function's premise stays true. If a
- * user-authored label is ever wanted, it goes through `inlineValue` — and this
- * comment is the thing that has to change with it.
+ * That reverses what this function used to do, and the reversal is the whole
+ * story of the field. The old rule was that `label` and `unit` come from the
+ * agent's config — our own source — so a marker in one is a config bug rather than
+ * an attack, and mangling it would hide that bug. 补充说明 kept the premise true by
+ * having its label be a constant in `lib/agents/profile.ts`, and this comment
+ * pre-committed: *"If a user-authored label is ever wanted, it goes through
+ * `inlineValue` — and this comment is the thing that has to change with it."*
+ *
+ * 我的记录 wants exactly that. A series is **named by the user**, and a series'
+ * unit is the user's too, so the premise is now false and the pre-commitment is
+ * what takes its place. `"训练条件\n- 身高：190"` as a series name would forge a
+ * field on the list below, and it would do so from inside the one block the whole
+ * product calls user data.
+ *
+ * **The neutralisation is unconditional, with no `trusted` flag.** A flag on a
+ * security boundary is the thing that gets defaulted wrong: the next field to
+ * arrive would inherit whichever value the caller happened to pass, and the
+ * failure would be silent in exactly the direction that matters. The objection it
+ * invites — that mangling hides a config bug — is answered instead by an assertion
+ * that no config label, unit or basis contains a delimiter (`verify-series.mts`),
+ * so a config bug fails loudly at build time rather than quietly at runtime.
+ *
+ * `inlineValue` rather than `neutralize` for the label and the unit, because the
+ * newline half is not optional here: both are rendered on the same line as the
+ * rest of the entry, so a newline in either forges an entry. The store refuses to
+ * accept a stored name or unit containing one, which makes this defence in depth
+ * rather than the only guard — and the reason it is still here is that "the store
+ * refuses it" is a property of a different module.
  */
 export function formatProfile(entries: ProfileEntry[]): string | null {
   if (entries.length === 0) return null;
@@ -156,7 +188,9 @@ export function formatProfile(entries: ProfileEntry[]): string | null {
   ];
 
   for (const entry of entries) {
-    lines.push(`- ${entry.label}：${inlineValue(entry.value)}${entry.unit ? ` ${entry.unit}` : ""}`);
+    lines.push(
+      `- ${inlineValue(entry.label)}：${inlineValue(entry.value)}${entry.unit ? ` ${inlineValue(entry.unit)}` : ""}`,
+    );
   }
 
   lines.push(PROFILE_END);

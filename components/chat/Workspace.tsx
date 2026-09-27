@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { AgentFacts } from "@/components/agent/AgentRails";
 import { LibraryPanel } from "@/components/agent/LibraryPanel";
 import { ProfileNudge, ProfilePanel } from "@/components/agent/ProfilePanel";
+import { SeriesPanel } from "@/components/agent/SeriesPanel";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Markdown } from "@/components/chat/Markdown";
 import { RetrievalPanel } from "@/components/chat/RetrievalPanel";
@@ -13,7 +14,7 @@ import { ToolPanel } from "@/components/tools/ToolPanel";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { WorkflowRunView } from "@/components/workflow/WorkflowRunView";
-import { profileEntries } from "@/lib/agents/profile";
+import { metricBasis, profileEntries, seriesEntries } from "@/lib/agents/profile";
 import type { AgentConfig } from "@/lib/agents/types";
 import { libraryDocumentFrom } from "@/lib/files/library";
 import { prepareUpload } from "@/lib/files/parse";
@@ -41,6 +42,7 @@ import {
   subscribeLibrary,
 } from "@/lib/store/library";
 import { profileSnapshot } from "@/lib/store/memory";
+import { savedSeries } from "@/lib/store/series";
 import { isConfigured, settingsSnapshot, subscribeSettings } from "@/lib/store/settings";
 import {
   clearRun,
@@ -271,9 +273,19 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
       // --- Standing context: the user's profile ------------------------------
       // Read at send time rather than held in state. The store is synchronous, so
       // this is the profile as of this message with no render in between — a
-      // value captured in a closure would be one edit stale.
+      // value captured in a closure would be one edit stale. 我的记录 is read on
+      // the same line and with the same timing, for the same reason: it is
+      // standing durable data of the same kind, and a second read elsewhere would
+      // be a second chance for the two to disagree. The `run` dependency list needs
+      // neither, because there is nothing here to go stale.
       const snapshot = profileSnapshot(agent.id);
-      const profile = snapshot.status === "loading" ? [] : profileEntries(agent.profile, snapshot.fields);
+      // The series are read outside the loading check, because the two stores load
+      // independently: 我的记录 can be ready while the profile store is still
+      // mid-read, and gating one on the other would silently drop a curve from a
+      // message for no reason the user could see.
+      const record = seriesEntries(savedSeries(agent.id), (metricKey) => metricBasis(agent, metricKey));
+      const profile =
+        snapshot.status === "loading" ? record : profileEntries(agent.profile, snapshot.fields, record);
 
       let knowledgeHits: RetrievedChunk[] = [];
       let retrievalError: AppError | null = null;
@@ -651,6 +663,16 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
             <LibraryPanel agent={agent} variant="strip" idPrefix="strip" onAddFiles={addToFolder} />
           </div>
 
+          {/* 我的记录's strip. Same `idPrefix` rule and the same reason, but this
+              panel's duplication is the one the UI spec's mounting rule did not
+              previously allow: it holds a draft. It is legal because the draft
+              lives in the store's module state rather than in `useState`, so both
+              copies read one source — see the header in SeriesPanel.tsx, and the
+              third mounting class in docs/03_UI_UX_SPEC.md §5. */}
+          <div className="lg:hidden">
+            <SeriesPanel agent={agent} variant="strip" idPrefix="strip" />
+          </div>
+
           <ToolPanel tools={agent.tools} onSend={send} ready={ready} busy={busy} />
 
           <div className="min-h-[40vh]">
@@ -794,6 +816,7 @@ export function Workspace({ agent }: { agent: AgentConfig }) {
         agent={agent}
         retrieval={panel}
         profile={<ProfilePanel agent={agent} variant="rail" idPrefix="rail" />}
+        series={<SeriesPanel agent={agent} variant="rail" idPrefix="rail" />}
         library={<LibraryPanel agent={agent} variant="rail" idPrefix="rail" onAddFiles={addToFolder} />}
       />
     </>

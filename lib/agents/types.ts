@@ -65,6 +65,51 @@ export type ProfileField =
   | (ProfileFieldBase & { type: "number"; unit?: string })
   | (ProfileFieldBase & { type: "select"; options: readonly string[] });
 
+/**
+ * One metric an agent suggests the user track over time — docs/04_AGENT_SPEC.md §9.
+ *
+ * A **suggestion**, not a whitelist: it is a one-tap starting point in the panel's
+ * empty state, and the user can create any series they like without one. The
+ * distinction matters because a suggestion carries a claim — that this number is
+ * worth watching — and the claim has to be sourced. Every list in
+ * `lib/agents/configs/` was checked against that agent's own knowledge base.
+ *
+ * `label` and `unit` are **copied into the series record when it is created**, so
+ * removing a suggestion later cannot orphan a series a user already keeps
+ * (`lib/series/types.ts`). `basis` is deliberately not: it is our prose about what
+ * the number means, read live and rendered both under the chart and as the
+ * series' second injected entry, so a wording fix in one place fixes it
+ * everywhere.
+ *
+ * **Declared inline, not in a totals registry.** The test is whether a
+ * `Record<Id, …>` buys anything: those buy compile-time safety by being referenced
+ * from *two* directions, which is how `ToolId` reaches `TOOL_COMPONENTS` and how
+ * `WorkflowId` reaches `WORKFLOW_DEFINITIONS`. Nothing references a metric id from
+ * a second place — a metric has no component and no definition body. What it has
+ * is `{ key, label, unit, basis, hint? }`, which is the exact shape of
+ * `ProfileField`, and that is declared inline. A union would also put a shared
+ * file in the path of adding an agent, which C4 asks not to happen.
+ */
+export interface MetricSuggestion {
+  /** Stable key, unique within an agent. What `Series.metricKey` records. */
+  key: string;
+  /** Chinese label, e.g. 体重. Becomes the series' default name. */
+  label: string;
+  /** e.g. `kg`. May be `""` — several of these have no unit. */
+  unit: string;
+  /**
+   * The 口径: what this number counts and how it should be measured. Injected as
+   * the series' second entry and printed under the chart.
+   *
+   * **Required, and never empty.** It is the product's only chance to say what a
+   * number means without interpreting it, and a suggestion that cannot say what
+   * it is measuring should not be suggested. Asserted in `verify-series.mts`.
+   */
+  basis: string;
+  /** Optional clarification shown in the panel. */
+  hint?: string;
+}
+
 export interface AgentConfig {
   /** Stable slug. Must match the `knowledge/<id>/` directory name. */
   id: string;
@@ -103,6 +148,16 @@ export interface AgentConfig {
    * (06_ACCEPTANCE.md C4).
    */
   profile?: readonly ProfileField[];
+  /**
+   * Metrics this agent suggests tracking over time — docs/04_AGENT_SPEC.md §9.
+   *
+   * Absent means the agent suggests none, which is a valid state rather than an
+   * unfinished one: `parenting`'s knowledge base is deliberately anti-numeric, so
+   * it offers nothing to chart while still giving the parent the panel and the
+   * ability to name a series themselves. Nothing anywhere special-cases that —
+   * `undefined` is already the "asks for nothing" state.
+   */
+  metrics?: readonly MetricSuggestion[];
   /**
    * Tool ids — docs/04_AGENT_SPEC.md §7. Empty when the agent carries none.
    *

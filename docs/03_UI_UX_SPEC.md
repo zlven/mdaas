@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Doc version | 1.0 |
-| Last updated | 2026-09-26 |
+| Last updated | 2026-09-27 |
 | Why this file exists | Coding agents reliably produce correct code and a Bootstrap admin dashboard. This file exists to prevent that. |
 
 ---
@@ -205,6 +205,11 @@ Three zones.
 │            │   │ assistant message    │     │   [          ]  │
 │            │   │ (streaming)          │     │   [ 清空档案 ]  │
 │            │   └──────────────────────┘     │   ────         │
+│            │                                │   我的记录 · 1 条曲线│
+│            │                                │   [体重] [睡眠] │
+│            │                                │   ╱‾╲__╱‾╲      │
+│            │                                │   ☑ 每次都带上  │
+│            │                                │   ────         │
 │            │                                │   资料夹 · 2/5  │
 │            │                                │   简历.pdf  ✕   │
 │            │                                │   ☑ 每次都带上  │
@@ -221,7 +226,7 @@ Three zones.
 |---|---|---|
 | Left rail | 240px | Icon, names, description, capability tags |
 | Centre | flexible | Conversation, max-width ~720px, centred |
-| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **the profile**, **the 资料夹**, and what was retrieved this turn |
+| Right rail | 280px | Capabilities, knowledge, tool names, workflows, **the profile**, **我的记录**, **the 资料夹**, and what was retrieved this turn |
 
 Both rails collapse below `lg`. The **centre column never exceeds ~720px** — full-width prose on a 1440px monitor is unreadable.
 
@@ -304,6 +309,48 @@ Not a strip, and not in the centre column:
 - **Its footer is the honest durability statement**, and the strongest one this product can make: stored in this browser, not synced across devices, lost to 清除站点数据, private mode, or eviction. It never says 永久保存, 不会丢失 or 已备份.
 - **Below `lg` it repeats as a collapsed strip in the centre column**, like the profile and for the same reason, with the same `idPrefix` obligation — both copies are in the DOM at once, and a shared id makes clicking a label flip the hidden checkbox instead of the visible one.
 
+### 我的记录 — right rail, between the profile and the 资料夹
+
+```
+│   ────                                         │
+│   我的记录 · 已记 1 条曲线                       │
+│   [ 体重 ] [ 睡眠时长 ]                         │
+│   ┌──────────────────────────┐                 │
+│   │ 63 ┤        ╭─╮           │                 │
+│   │ 62 ┤   ╭────╯ ╰──╮        │                 │
+│   │ 61 ┤───╯          ╰──     │                 │
+│   │    └┬─────┬─────┬─────┬── │                 │
+│   │   01-01 03-01 05-01 07-01 │                 │
+│   └──────────────────────────┘                 │
+│   单位：kg · 2026-01-01 至 2026-09-27 · 共 12 条 │
+│   纵轴自 60 起，不从 0 开始                      │
+│   来源：你自己在这个浏览器里的记录                │
+│   口径：早起空腹、同一台秤，每次记一个数           │
+│   ☑ 每次都带上                                  │
+│   日期 [ 2026-09-27 ]                           │
+│   体重（kg） [ 62.5 ]                           │
+│   备注（可不填） [              ]               │
+│   [ 记一笔 ]                                    │
+│   共 12 条记录                            ▸     │
+│   每次发消息会带上 1 条，共 96 字（按你的 Key…   │
+│   或者自己加一条                          ▸     │
+│   记录保存在这个浏览器里，不跨设备同步。…         │
+```
+
+- **It sits between the profile and the 资料夹, and the order is the request's order rather than a preference.** All three are standing data the user authored, so all three are read at send time and all three sit above 本次检索. Among them the sequence is the prompt's: the profile block is composed first, the series summaries are inserted **inside** it, and the reference block the 资料夹 is numbered into comes after. The rail reads top to bottom in the order the request is assembled, so changing one means changing both (`components/agent/AgentRails.tsx`).
+- **The chart is a mirror, not a coach, and that is a rule rather than a style.** It draws the points the user entered and the geometry needed to place them, and nothing the product computed about their meaning. No target or goal line; no healthy/normal band, shaded region or percentile curve; no average, median or trend line; no direction-dependent colour, delta chip or percentage change; no projection; no BMI, growth percentile or 达标 wording; no word of praise or alarm. `--success`, `--warning` and `--danger` do not appear here. Permitted: count, date range, min–max, latest value and date, and the axis-truncation statement. `04_AGENT_SPEC.md` §9 carries the four reasons, `mental`'s being the one with a safety consequence — the score is emotional intensity, so up is worse.
+- **The caption is a requirement, not decoration.** `knowledge/office/data-analysis.md` states the rules the product already owns — 标题, 单位, 时间范围, 数据来源, and that a truncated y-axis 「需要明确标注」 — so every chart carries the series name as its heading, the 单位 · 范围 · 条数 line, 「纵轴自 60 起，不从 0 开始」 whenever the axis does not contain zero (「纵轴到 4000 止，不含 0」 the other way), 「来源：你自己在这个浏览器里的记录」, and the config's 口径 beneath it. The same sentence is the `<svg>`'s `aria-label`, so the chart is not silent to a screen reader.
+- **One series at a time, selected by a chip row.** Two units cannot share an axis, and overlaying two series would need a second colour, which §2 does not allow. The chip carries `aria-pressed`, not `aria-expanded`: this selects, it does not disclose. The suggestion chips that start a new series are a separate row above, and a suggestion already taken is shown disabled as 「体重 · 已记」 rather than hidden.
+- **Tick labels are plain ungrouped digits**, the rule this section already states for a tool's own numbers — `62.5`, not `62.50` and not `1,200`. The axis precision is derived from the tick step rather than from each value, so one axis cannot print `62` and `62.0`.
+- **The degenerate cases are defined renderings, not divide-by-zero.** Zero points draws **no `<svg>` at all** — empty axes would lie about a chart existing. One point draws the point and its value as text with **no y-axis**, because an axis whose min equals its max misrepresents scale. All-equal values draw a flat line with one tick at that value and no invented ±. Above 40 points the dots are suppressed, because a dot smear is noise rather than information. The scale is **full linear, never log** — a log axis silently changes what the slope means. And the chart renders `w-full` with a `max-w`, because an uncapped width in the strip would scale the tick text up with it.
+- **The overwrite rule is stated three ways**, because a silent overwrite is the one behaviour here a user cannot discover by trying it: a permanent hint under the date field; the button becoming 「覆盖 3 月 5 日」 with 「这一天已经记过 62.5 kg，保存会覆盖。」 above it when the date already carries a point; and a two-step per-point delete, without which a mis-*dated* point — which overwriting cannot fix — would distort the chart permanently. Inline, never a dialog: this spec has no dialog idiom and forbids one in three places.
+- **The value box takes the unit in its label, not as a suffix** — the `NumberField` rule. 「62.5」 in a box marked 「体重（kg）」 is unambiguous, where a suffix invites 「62.5kg」.
+- **The note field says who reads it.** 「备注只存在你这边，不会发给专家。」 It is the one field here a user would otherwise assume is injected, and it is not (`04_AGENT_SPEC.md` §9).
+- **The cost line is exact and unhedged** — no 约, no "大概", the same rule and the same reason as the 资料夹's: the user pays with their own key, and the number is a sum of what is actually sent. When nothing is included it says what that means instead.
+- **The cap is stated, not discovered.** At five series the suggestion chips and the 建立 button stay visible and disabled with the reason as visible text, and the copy names the action. A control that silently disappears reads as a bug.
+- **Its footer is the same bounded durability statement the 资料夹 carries**, and it matters more here than there: a document can be attached again from the user's own file, and a measurement someone took off a scale cannot be retyped from anywhere. It never says 永久保存, 不会丢失 or 已备份.
+- **Below `lg` it repeats as a collapsed strip in the centre column**, like the profile and the 资料夹, with the same `idPrefix` obligation. The strip's heading carries the count (「我的记录 · 已记 1 条曲线」), and the empty and unreadable states are distinguished rather than collapsed into one line — 「还没记」 and 「读取失败」 are different facts. The chart itself is not the only thing that must survive the narrow viewport, so the strip is a `<details>` rather than a truncation.
+
 ### Collapsed rows
 
 The rule below governs every `<details>` in the workspace — the retrieved-context section, each chunk inside it, and the profile strip below `lg`. It is not decoration, and it is what `components/ui/Disclosure.tsx` exists to enforce:
@@ -316,8 +363,13 @@ The rule below governs every `<details>` in the workspace — the retrieved-cont
 
 The narrow-screen adaptation in this layout *duplicates* below `lg` rather than moving: both copies are in the DOM, one hidden by `display: none`. Whether that is safe is a property of the component, not of the layout:
 
-- **A component holding a draft must exist exactly once.** Two copies are two independent drafts, and typing into the visible one and then widening the window past `lg` silently discards what was typed. The tools are in this class (their inputs are `useState`) and so is `ChatInput`.
+- **A draft held in component state must exist exactly once.** Two copies are two independent drafts, and typing into the visible one and then widening the window past `lg` silently discards what was typed. The tools are in this class (their inputs are `useState`) and so is `ChatInput`.
 - **A component whose inputs are controlled from a store snapshot may be duplicated**, provided its element ids carry an instance prefix. The profile is in this class: it renders `value` straight from `lib/store/memory.ts` and keeps no draft of its own, so both copies read the same source. It still has to set `idPrefix`, because duplicate ids would break `<label for>`. `RetrievalPanel` is duplicated for the same reason and needs no prefix, holding no controls at all.
+- **A draft shared from a single module-state source may be duplicated**, with the same `idPrefix` obligation. This was added for 我的记录, and the first two classes did not cover it: the record entry form *is* a transaction with a draft, so the first rule would have put it in the tools' class and mounted it once — which would have put the entry affordance in a different column from the chart above `lg`, since the tools live in the centre column and the rail is gone below it. That is a worse product than the one the rail gives, and the rail is what the owner chose.
+
+  The rule's real subject is not "does it hold a draft" but **"does every copy read the same draft"**, and `lib/store/series.ts` is what makes the answer yes: the draft lives in module state per agent, outside the record and outside the snapshot. So a half-typed value survives the window crossing `lg`, a reload discards it (right for a transaction), and nothing is written to `IndexedDB` per keystroke. The snapshot deliberately does not include it, so its identity is unchanged while the user types and `useSyncExternalStore` bails out — the chart, the series list, the cost line and the whole `Workspace` do not re-render on a keystroke; only the two form instances do.
+
+  What it costs: the panel is the one component in this product that is **both** duplicated **and** holds a draft, so a future reader who applies the first bullet by pattern will mount it once and break the narrow-screen form. That is why the class is written here rather than left to `components/agent/SeriesPanel.tsx` to explain.
 
 ### The expanded tool
 

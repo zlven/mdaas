@@ -30,6 +30,18 @@ export const creator: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.creator,
   knowledgeBase: "creator",
+  // Both from `knowledge/creator/08-数据复盘指标.md`. The 口径 on 完播率 says the
+  // quiet part out loud: the platforms do not compute it the same way, so a curve
+  // that mixes two of them is not one curve.
+  metrics: [
+    {
+      key: "completion-rate",
+      label: "完播率",
+      unit: "%",
+      basis: "单条内容完整看完的人数占比，各平台的统计口径不一样，换平台要重新起一条",
+    },
+    { key: "saves", label: "收藏数", unit: "", basis: "单条内容当天的收藏数" },
+  ],
   tools: ["speaking-time"],
   workflows: ["creator-30day"],
   modelProfile: "creative",

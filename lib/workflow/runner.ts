@@ -35,7 +35,7 @@
  */
 
 import type { AgentConfig } from "@/lib/agents/types";
-import { profileEntries } from "@/lib/agents/profile";
+import { metricBasis, profileEntries, seriesEntries } from "@/lib/agents/profile";
 import { isAppError, appError, type AppError } from "@/lib/llm/errors";
 import { stream } from "@/lib/llm/gateway";
 import type { Credentials } from "@/lib/llm/types";
@@ -45,6 +45,7 @@ import { documentHits } from "@/lib/rag/uploads";
 import type { ProviderSettings } from "@/lib/store/settings";
 import { profileSnapshot } from "@/lib/store/memory";
 import { savedDocuments } from "@/lib/store/library";
+import { savedSeries } from "@/lib/store/series";
 import { commitRun, runSnapshot, setRunNotice } from "@/lib/store/workflow-runs";
 import { runWorkflow, type StepCall, type StepCaller } from "@/lib/workflow/engine";
 import { getWorkflow } from "@/lib/workflow/registry";
@@ -113,7 +114,17 @@ export async function driveRun(request: RunRequest): Promise<void> {
   // is standing context, and a run is one decision. The store is synchronous, so
   // this is the profile as of now with no render in between.
   const snapshot = profileSnapshot(agent.id);
-  const profile = snapshot.status === "loading" ? [] : profileEntries(agent.profile, snapshot.fields);
+  // 我的记录 joins the declared fields and precedes 补充说明, because it is standing
+  // durable data of the same kind, and `seriesEntries` puts it there rather than
+  // here — the block's order lives in `profileEntries` and only there.
+  //
+  // Read outside the loading check, because the two stores load independently:
+  // 我的记录 can be ready while the profile store is still mid-read, and gating one
+  // on the other would silently drop a curve from a run for no visible reason.
+  // Only series with the per-series switch on and at least one point come back.
+  const record = seriesEntries(savedSeries(agent.id), (metricKey) => metricBasis(agent, metricKey));
+  const profile =
+    snapshot.status === "loading" ? record : profileEntries(agent.profile, snapshot.fields, record);
 
   // The 资料夹 is read here for the same reason and with the same timing: it is
   // standing context the user opted into carrying, so it is a property of the run

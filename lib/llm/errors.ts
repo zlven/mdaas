@@ -27,6 +27,8 @@ export type ErrorCode =
   | "RETRIEVAL_FAILED"
   | "PARSE_FAILED"
   | "LIBRARY_FULL"
+  | "SERIES_FULL"
+  | "POINTS_FULL"
   | "STORAGE_UNAVAILABLE"
   | "STORAGE_READ_FAILED"
   | "STORAGE_WRITE_FAILED"
@@ -101,6 +103,11 @@ const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
   // is a fallback — `libraryFullError` states the limit, which is the part that
   // matters.
   LIBRARY_FULL: "资料夹已经满了。",
+  // The same shape as LIBRARY_FULL, for the same reason: a ceiling reached is a
+  // state rather than a fault, and the default is a fallback — the constructors
+  // below state the limit, which is the part that matters.
+  SERIES_FULL: "我的记录已经满了。",
+  POINTS_FULL: "这条记录已经记满一年了。",
   // Storage, not the provider. Neither of these is fixable from an error card,
   // so neither borrows a provider code: PROVIDER_ERROR would tell the user to
   // retry the provider, PARSE_FAILED talks about reading a file, and
@@ -134,6 +141,8 @@ const DEFAULT_REMEDY: Record<ErrorCode, Remedy | undefined> = {
   // The remedy (delete one) is a control sitting next to the message, so a card
   // action would be a second, worse route to the same place.
   LIBRARY_FULL: undefined,
+  SERIES_FULL: undefined,
+  POINTS_FULL: undefined,
   // What has to change is a browser setting, and the message already says so.
   STORAGE_UNAVAILABLE: undefined,
   // The repair is a page reload, which is not a control we can put in a card.
@@ -232,6 +241,42 @@ export function fileUnreadableError(name: string, reason: string): AppError {
 export function libraryFullError(limit: number): AppError {
   return appError("LIBRARY_FULL", `library at capacity (${limit})`, {
     message: `资料夹最多放 ${limit} 份文档。想再存一份，先删掉其中一份。`,
+  });
+}
+
+/**
+ * 我的记录 is at its ceiling — `04_AGENT_SPEC.md` §9.
+ *
+ * Rendered as a state rather than as a failure, exactly like `LIBRARY_FULL`: the
+ * add control stays visible and this text sits under it, so the cap is
+ * discoverable before the user fills in a form.
+ *
+ * `used` names the second refusal this code carries. Tapping a suggestion that is
+ * already tracked is refused by `canAddSeries`, and the honest message names the
+ * series that is in the way rather than the ceiling — the two are different
+ * problems with the same code.
+ */
+export function seriesFullError(limit: number, used?: string): AppError {
+  return appError("SERIES_FULL", `series at capacity (${limit})`, {
+    message:
+      used === undefined
+        ? `我的记录最多放 ${limit} 条曲线。想再加一条，先删掉其中一条。`
+        : `「${used}」已经在记了。同一条曲线记一次就够了，想换内容可以把它删掉再建。`,
+  });
+}
+
+/**
+ * One series holds a full year of daily points — `04_AGENT_SPEC.md` §9.
+ *
+ * The remedy for a full series is not deletion, which is why this is a separate
+ * code from `SERIES_FULL` and carries no card action: the user's history is
+ * exactly what the feature is for, and telling them to delete it to make room
+ * would be advice against their own interest. The message says what to do
+ * instead — start another series — which is a real action available to them.
+ */
+export function pointsFullError(limit: number): AppError {
+  return appError("POINTS_FULL", `series at point capacity (${limit})`, {
+    message: `一条记录最多存 ${limit} 天，也就是一年。想继续记，可以为接下来的阶段另起一条。`,
   });
 }
 

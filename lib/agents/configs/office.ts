@@ -24,6 +24,12 @@ export const office: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.office,
   knowledgeBase: "office",
+  // From `knowledge/office/retrospective.md`: a 复盘 has to check the previous
+  // round's improvement items before it sets new ones. Counting them is how that
+  // gets a history rather than a memory.
+  metrics: [
+    { key: "actions", label: "复盘改进项", unit: "项", basis: "本轮复盘定下的改进项有几项，下一轮要回头检查的就是这些" },
+  ],
   tools: ["meeting-cost"],
   workflows: ["office-meeting-summary"],
   modelProfile: "reasoning",

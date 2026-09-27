@@ -44,6 +44,13 @@ export const study: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.study,
   knowledgeBase: "study",
+  // `时间管理与复盘.md` names both of these and says what to do with them:
+  // 「每两周记录一次这两个数字，观察变化方向」. That is the whole feature in one
+  // line of the agent's own knowledge base.
+  metrics: [
+    { key: "completion", label: "任务完成率", unit: "%", basis: "当天计划完成的比例，计划外新加的任务不算在内" },
+    { key: "mock-score", label: "自测分数", unit: "分", basis: "同一套题或同一类题的得分，换了卷子就不是同一个数" },
+  ],
   tools: ["word-plan"],
   workflows: [],
   modelProfile: "reasoning",

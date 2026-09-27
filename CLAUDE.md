@@ -64,17 +64,22 @@ Prompts and knowledge stay Chinese because the agents answer in Chinese. Do not 
 ## Commands
 
 ```bash
-npm run dev            # dev server
-npm run build          # static export
-npm run build:assets   # rebuild knowledge + prompts only
+npm run dev              # dev server
+npm run build            # static export
+npm run build:assets     # rebuild knowledge + prompts only
 npm run typecheck
 npm run lint
-npm run verify:upload  # the pure half of the upload + prompt-injection checks
+npm run verify:upload    # uploads, the prompt-injection boundary and the profile
+npm run verify:series    # 我的记录 — chart geometry, caps and the summary's budget
+npm run verify:tools     # the tools' arithmetic
+npm run verify:workflow  # the workflow engine
 ```
 
-`verify:upload` runs the Node-checkable assertions from `docs/06_ACCEPTANCE.md`
-§E and the profile ones from I12. Everything it asserts is a pure function; what
-needs a browser is listed at the end of `docs/06_ACCEPTANCE.md` §E.
+The four `verify:*` scripts are the Node-checkable half of
+`docs/06_ACCEPTANCE.md` — `verify:upload` covers §E plus the profile and series
+clauses of I12, `verify:series` covers §M. Everything they assert is a pure
+function. **What needs a browser is not covered by any of them**, and each
+section's table says which items those are.
 
 **When you add an assertion there, delete the thing it guards and confirm it goes
 red** — and that it goes red *on that assertion*, since an import error is also

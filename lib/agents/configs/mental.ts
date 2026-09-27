@@ -62,6 +62,23 @@ export const mental: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.mental,
   knowledgeBase: "mental",
+  // `knowledge/mental/日常情绪记录方法.md` prescribes exactly this pair, which is
+  // why it is the one list in the set that is sourced verbatim rather than
+  // inferred.
+  //
+  // **The `basis` on 情绪强度 is load-bearing and is not a wording preference.** A
+  // higher score means a *stronger* emotion, not a better one, so a panel or a
+  // chart that coloured a rise as improvement would be wrong in the direction
+  // that carries a safety consequence. That is why the axis label says so, why
+  // nothing in `lib/series/` computes a direction, and why §6.10's pattern — not
+  // this number alone — is what the agent judges.
+  metrics: [
+    { key: "mood", label: "情绪强度", unit: "分", basis: "0 到 10 分，分数越高表示情绪越强烈，不代表好坏" },
+    // Paired with the score because §6.10's first trigger reads 「连续两周以上情绪
+    // 低落、兴趣丧失，伴有明显的睡眠或食欲改变」 — a pattern across both, which a
+    // mood series alone cannot show.
+    { key: "sleep", label: "睡眠时长", unit: "小时", basis: "当天实际睡着的时间，不是躺在床上的时间" },
+  ],
   tools: ["bedtime"],
   workflows: [],
   modelProfile: "balanced",

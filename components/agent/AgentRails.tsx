@@ -12,10 +12,10 @@ import { WORKFLOW_DEFINITIONS } from "@/lib/workflow/registry";
  * that pulls this file into the client bundle, which for two static blocks is the
  * cheaper side of the trade.
  *
- * Three of its sections are **slots** — `retrieval`, `profile` and `library` —
- * because all three are client-rendered state that lives in `Workspace`. Passing
- * them in keeps this file free of `"use client"`, so the capability and knowledge
- * lines stay in the server component where they belong.
+ * Four of its sections are **slots** — `retrieval`, `profile`, `series` and
+ * `library` — because all four are client-rendered state that lives in
+ * `Workspace`. Passing them in keeps this file free of `"use client"`, so the
+ * capability and knowledge lines stay in the server component where they belong.
  */
 
 export function AgentIdentity({ agent }: { agent: AgentConfig }) {
@@ -72,16 +72,31 @@ export function AgentFacts({
   agent,
   retrieval,
   profile,
+  series,
   library,
 }: {
   agent: AgentConfig;
   retrieval: React.ReactNode;
   profile: React.ReactNode;
+  series: React.ReactNode;
   library: React.ReactNode;
 }) {
   return (
     <aside className="hidden w-72 shrink-0 lg:block">
-      <div className="sticky top-24 space-y-6">
+      {/* `max-h` + `overflow-y-auto` rather than a bare `sticky top-24`.
+          A sticky element taller than the viewport pins its top and puts its
+          bottom permanently out of reach — the page scrolls, the rail does not,
+          and the last section can never be read. Four sections was already close
+          to the viewport at 800px; 我的记录 makes it the normal case rather than
+          the edge case, so it is fixed here rather than after the first report.
+
+          The focus ring is the known cost: `outline-offset: 2px` is clipped at a
+          scroll container's edge, so a control flush against the left or right
+          edge loses a pixel of its ring while focused. Padding the container
+          would fix it and would also shift every section's left edge away from
+          the headings above, so the offsets stay and the ring stays slightly
+          clipped — it is a focus ring that is 2px short, not a missing one. */}
+      <div className="sticky top-24 max-h-[calc(100vh-7rem)] space-y-6 overflow-y-auto">
         <Fact label="能做什么">{agent.capabilities.join(" · ")}</Fact>
 
         <Fact label="知识库">
@@ -117,6 +132,16 @@ export function AgentFacts({
             collapsible controls are all in the centre column; this is not one
             of them. */}
         {profile}
+
+        {/* 我的记录 sits between the profile and the 资料夹, and the order is the
+            request's: the owner asked for the curve, and it is the nearer relative
+            of the two. Both are standing durable data the user authored, so both
+            are in the profile *block* of the prompt — `seriesEntries` inserts the
+            summaries between the declared fields and 补充说明, which is to say
+            above the whole reference block, and this is that same sequence read
+            top to bottom. The rail's order and the block's order are one decision
+            stated twice, so changing either means changing both. */}
+        {series}
 
         {/* The 资料夹 sits beside the profile for the same reason the profile sits
             here at all: both are standing material the user opted to carry,

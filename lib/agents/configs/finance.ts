@@ -52,6 +52,17 @@ export const finance: AgentConfig = {
   enabled: true,
   systemPrompt: PROMPTS.finance,
   knowledgeBase: "finance",
+  // From `应急储备金.md` and `记账与预算方法.md`.
+  //
+  // **Neither carries a verdict, and that is the `financial-edu` boundary showing
+  // through the data model.** 应急储备金 rising is not called good here and 每月支出
+  // rising is not called bad: the panel restates both, and the agent — whose §6
+  // boundary forbids personalised investment advice — is the only thing allowed to
+  // say what either means.
+  metrics: [
+    { key: "emergency-fund", label: "应急储备金", unit: "元", basis: "随时能取出来的现金和活期，不含股票、基金和定期" },
+    { key: "monthly-spend", label: "每月支出", unit: "元", basis: "当月全部支出，按记账的总额填" },
+  ],
   tools: ["emergency-fund"],
   workflows: [],
   modelProfile: "reasoning",

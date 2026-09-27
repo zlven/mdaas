@@ -86,6 +86,29 @@ function validate(agents: AgentConfig[]): void {
       keys.add(field.key);
     }
 
+    // Same class of check as the profile keys above, and for the same reason: a
+    // metric `key` is a storage value (`Series.metricKey`) and the identity of a
+    // one-tap button, so two suggestions sharing one would make the second
+    // untakeable — `canAddSeries` refuses a `metricKey` already in use, and the
+    // panel would render a button that silently does nothing. Reachable by
+    // editing a config, invisible until someone taps it, so it throws here.
+    //
+    // The delimiter check that makes `formatProfile`'s unconditional
+    // neutralisation provably a no-op on our own config lives in
+    // `verify-series.mts` instead — a mangled label is a content defect rather
+    // than a broken page, which is the same split the repo makes for labels
+    // everywhere else.
+    const metricKeys = new Set<string>();
+    for (const metric of agent.metrics ?? []) {
+      if (metric.key.trim() === "") {
+        throw new Error(`registry: "${agent.id}" declares a metric with an empty key`);
+      }
+      if (metricKeys.has(metric.key)) {
+        throw new Error(`registry: "${agent.id}" declares the metric key "${metric.key}" twice`);
+      }
+      metricKeys.add(metric.key);
+    }
+
     if (agent.enabled) {
       // The knowledge directory is named after the id, and the browser fetches
       // /knowledge/<id>.json by that name. A mismatch is a silent 404.
