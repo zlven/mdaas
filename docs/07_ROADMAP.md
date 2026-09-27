@@ -12,11 +12,11 @@
 
 **Goal:** a deployed product a stranger can use, at ¥0, with technical maintenance only.
 
-**In scope:** four functional agents, agent-scoped RAG, three workflows, BYOK across four provider types, four pages.
+**In scope:** nine agents, agent-scoped RAG, three workflows, BYOK across four provider types, four pages.
 
-**Done when** `06_ACCEPTANCE.md` A–K pass.
+**Done when** `06_ACCEPTANCE.md` A–K pass. That now includes I13–I18, which the five later agents brought with them and which **have not been run** — so A–K does not currently pass, and the gap is exactly those six checks.
 
-**Explicitly not in Phase 0:** accounts, payments, community, the remaining five agents' prompts.
+**Explicitly not in Phase 0:** accounts, payments, community, a safety-policy engine, workloads of any kind beyond the three.
 
 ---
 
@@ -36,25 +36,23 @@ Item 5 is worth its own note: the funnel currently asks a stranger to obtain an 
 
 ---
 
-## 3. Phase 2 — the remaining five agents
+## 3. Phase 2 — ~~the remaining five agents~~ (done, with one obligation outstanding)
 
-Only after Phase 1.
-
-Each requires what `04_AGENT_SPEC.md` §5 lists, and the C4 test must still pass for each.
-
-**Three of them require a safety review that the other two do not:**
+**This phase was pulled into Phase 0 by decision #16 and is complete as content.** All nine agents are written and enabled. What this section said about the three safety-critical ones was right, and it is worth keeping in view rather than deleting:
 
 | Agent | Why it is different |
 |---|---|
-| `mental` | Crisis escalation. Needs a reviewed escalation path, regional helpline handling, and a decision about what the agent does when a user signals self-harm. This is the highest-risk agent in the set and should be the last one shipped, not the first. |
-| `finance` | Must remain education-only. Needs a hard boundary against personalised investment advice, which is a regulated activity. |
-| `parenting` | Involves minors. Needs a minor-safety policy and a decision about age-appropriate content. |
+| `mental` | Crisis escalation. This was called "the highest-risk agent in the set". The boundary is written (`prompts/mental.md` §6.10) as a single threshold naming routes to help and no specific helpline. |
+| `finance` | Must remain education-only. The boundary against personalised investment advice is written (`prompts/finance.md` §6). |
+| `parenting` | Involves minors. `minor-safety` is written (`prompts/parenting.md` §6.8), including no diagnosis of a child and no punitive technique. |
 
-The other two — `style`, `career` — are `content-default` and can ship on the normal path.
+**The outstanding obligation is verification, not content.** `06_ACCEPTANCE.md` I13–I18 are the human checks for these three. They are written and **have not been run**. Until they are, these three are *written and built*, not *verified*, and the roadmap's own earlier judgement — that `mental` "should be the last one shipped, not the first" — is best honoured by running I13 first rather than by treating the merge as the ship.
 
-`study` left this group in Phase 0: `content-default` was the whole of its safety need, so it needed no review to ship (`04_AGENT_SPEC.md` §4.4, decision #13 below).
+Note also what has **not** changed: there is still no policy engine, `lib/safety/` still does not exist, and `safetyPolicy` is still a label nothing reads (`02_TECH_SPEC.md` §13). Building one remains a Phase 1 candidate, and it would need its own acceptance criteria rather than being assumed to make I13–I18 pass.
 
-`04_AGENT_SPEC.md` §4.5 reserves each policy so Phase 2 does not rediscover them.
+The remaining Phase 2 work that is genuinely left is the original Phase 1 list — deepening the knowledge bases, the browser acceptance pass, and the agent-review checklist.
+
+`study` left the `Coming Soon` group first: `content-default` was the whole of its safety need, so it needed no review to ship (`04_AGENT_SPEC.md` §4.4, decision #13).
 
 ---
 
@@ -160,15 +158,16 @@ Each entry records a decision and **why**, so it is not relitigated by a future 
 | 1 | Client-side architecture; no backend | The ¥0 constraint. BYOK is not merely a margin strategy — it is what makes zero infrastructure cost possible at all. | 2026-09-26 |
 | 2 | `docs/` outranks `project_plan/` | The business plan and SRS describe a paid, server-side product. Building that in Phase 0 is a defect, not ambition. | 2026-09-26 |
 | 3 | Community deferred | The target audience has no GitHub account; a GitHub-based community would be dead on arrival. | 2026-09-26 |
-| 4 | Three functional agents, seven `Coming Soon` | Ten real agents is not a Phase 0 scope. Showing ten and shipping three is honest; showing three is a smaller product. **Revised by #12/#13 — of nine agents, four are functional and five are `Coming Soon`.** | 2026-09-26 |
-| 5 | The seven get no prompts | Writing them would be speculative surface area, and shipped-but-unverified safety policies for `mental` and `parenting` would carry obligations nothing checks. **Now five — #13 wrote `study`'s, and it needs no policy beyond `content-default`.** | 2026-09-26 |
+| 4 | Three functional agents, seven `Coming Soon` | Ten real agents is not a Phase 0 scope. Showing ten and shipping three is honest; showing three is a smaller product. **Revised by #12/#13 — of nine agents, four are functional and five are `Coming Soon`. Superseded by #16 — all nine are functional.** | 2026-09-26 |
+| 5 | The seven get no prompts | Writing them would be speculative surface area, and shipped-but-unverified safety policies for `mental` and `parenting` would carry obligations nothing checks. **Now five — #13 wrote `study`'s, and it needs no policy beyond `content-default`. Superseded by #16 — all five are written. The second half of the reason is not superseded: the obligations are now shipped and still unchecked, which is what I13–I18 exist to close.** | 2026-09-26 |
 | 6 | BM25, not embeddings | Embeddings require an embedding API, which requires a key and a server-side cost. BM25 runs in the browser for ¥0. | 2026-09-26 |
 | 7 | Structural knowledge isolation | Fetching only the selected agent's index makes cross-agent retrieval impossible by construction. A filter would be a runtime promise that a refactor can break. | 2026-09-26 |
 | 8 | Intent-based model profiles, not temperature | `temperature` was removed from current Anthropic models and returns a 400. See `02_TECH_SPEC.md` §6.4. | 2026-09-26 |
 | 9 | Hosting stays on the free tier despite the China access risk | Accepted on the condition that §7's trigger is honoured. | 2026-09-26 |
 | 10 | `creator-30day` has 7 stages | `01_PRD.md` and the acceptance list disagreed; 增长建议 was missing from the latter. | 2026-09-26 |
 | 11 | Knowledge files differ in naming across agents | `office`/`fitness` use English kebab-case; `creator` uses numbered Chinese names. Cosmetic — the build globs `**/*.md` — but normalise it in Phase 1. | 2026-09-26 |
-| 12 | `hair` (头皮毛发健康专家) removed; the roster is nine | A product judgement, not a scope cut: the subject read as jarring beside the other eight. The count was never the argument — ten agents with four working is as honest as nine with four. | 2026-09-27 |
+| 12 | `hair` (头皮毛发健康专家) removed; the roster is nine | A product judgement, not a scope cut: the subject read as jarring beside the other eight. The count was never the argument — ten agents with four working is as honest as nine with four. *(Superseded in part by #16: of nine, nine are now functional.)* | 2026-09-27 |
 | 13 | `study` (考研公考学业规划) promoted out of `Coming Soon` | Its prompt and knowledge base are written, and `content-default` is the whole of its safety need. It is the first agent added since C4 was written, and it exercised that test exactly: one config, one prompt, one knowledge directory, **no registry edit** — it was already registered. | 2026-09-27 |
 | 14 | A workflow step declares a prompt; the engine owns the model call | `02_TECH_SPEC.md` §10's sketch is not implementable — `ModelGateway` is not a type, and its `WorkflowContext` has no credentials, model, signal or system prompt. Injecting the call (`StepCaller`) is what makes the engine testable in Node with a scripted generator, which is how F3–F6 are checked at all. | 2026-09-27 |
 | 15 | The three workflows all run on that one engine, including the two single-call ones | `office-meeting-summary` and `fitness-plan` are one-step workflows rather than a second "structured call" path. F1 asks every functional agent to expose a workflow, so a parallel path would buy a shorter array and cost a second copy of the failure, retry and persistence surfaces. | 2026-09-27 |
+| 16 | The five `Coming Soon` agents are written and enabled — the roster is nine functional | An owner decision, taken with the cost stated. It supersedes #4's "four functional" and #5's "the five get no prompts". It does **not** supersede the reason #5 existed: `mental`, `finance` and `parenting` carry safety boundaries that nothing in the runtime enforces, so `06_ACCEPTANCE.md` I13–I18 were added in the same change and are **unrun**. The five shipped as content; the three ship as *verified* only when someone runs those checks against a real browser and a real key. | 2026-09-27 |

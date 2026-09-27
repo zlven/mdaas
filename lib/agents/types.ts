@@ -81,11 +81,15 @@ export interface AgentConfig {
   /**
    * false renders the card as "Coming Soon" and blocks the workspace from
    * rendering an input (01_PRD.md §3.3).
+   *
+   * The staging mechanism, not a live state: all nine agents are `enabled: true`
+   * and the `Coming Soon` render paths are currently unreachable
+   * (00_PRODUCT_BRIEF.md §4).
    */
   enabled: boolean;
   /**
    * Resolved from `lib/generated/prompts.ts`, which the asset build produces
-   * from `prompts/<id>.md`. Disabled agents carry `NOT_IMPLEMENTED_PROMPT`,
+   * from `prompts/<id>.md`. A disabled agent carries `NOT_IMPLEMENTED_PROMPT`,
    * which is unreachable rather than merely unused.
    */
   systemPrompt: string;
@@ -122,6 +126,13 @@ export interface AgentConfig {
    */
   workflows: readonly WorkflowId[];
   modelProfile: ModelProfileId;
+  /**
+   * A label recording which safety obligation this agent carries. **Read by
+   * nothing at runtime** — there is no policy engine (02_TECH_SPEC.md §13).
+   * The boundary itself is written as the last numbered rule of §六 in
+   * `prompts/<id>.md`; this field only keeps a future engine from having to
+   * rediscover which agents have one.
+   */
   safetyPolicy: SafetyPolicyId;
   /** Empty-state chips in the workspace. Empty for disabled agents. */
   suggestedPrompts: string[];

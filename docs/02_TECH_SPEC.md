@@ -578,27 +578,25 @@ Explicitly **not** in the MVP, and each requires a justification against C1 befo
 
 ## 13. Safety policies
 
-`lib/safety/policies.ts` exports typed policies referenced by agent configs.
+**There is no policy engine. `lib/safety/` does not exist.** This section previously described a `lib/safety/policies.ts` exporting `SafetyPolicy` objects with a `preamble`, `outputFilters`, and an `EscalationRule`. None of that was ever built, and this section described it in the present tense, which is how a spec becomes a false claim.
 
-```ts
-export interface SafetyPolicy {
-  id: SafetyPolicyId;
-  preamble: string;                 // appended to the agent's system prompt
-  outputFilters: OutputFilter[];    // regex/rule checks on streamed output
-  escalation?: EscalationRule;      // e.g. crisis resources for `mental`
-}
-```
+What exists is:
 
-| Policy | Applies to | Core requirement |
-|---|---|---|
-| `health-edu` | `fitness` | Education and lifestyle only. No diagnosis, treatment, prescription, or promised outcome. Recommend professional advice on pain, injury, or serious symptoms. |
-| `crisis-escalation` | `mental` | Four tiers: Normal → Concern → High Risk → Escalation. On high risk, suspend normal companion behaviour, surface crisis resources, and encourage contacting a trusted person or emergency services. Never diagnose. Never claim to replace a psychologist. |
-| `financial-edu` | `finance` | Financial education only. No securities advice, no return guarantees, no principal guarantees. |
-| `minor-safety` | `parenting` | Age-appropriate content, data minimisation, no emotional dependency, no diagnosis of a child. |
+- `AgentConfig.safetyPolicy: SafetyPolicyId` — a **label**, written in all nine configs, read by **nothing at runtime**. It records which obligation an agent carries so a future engine does not have to rediscover it. `SafetyPolicyId` is declared at `lib/agents/types.ts:29`.
+- The obligation itself, written as the **last numbered rule of §六 in each agent's prompt**, and — for the four that carry one — as one or more sections in its knowledge base.
 
-`mental`, `finance`, and `parenting` are `Coming Soon`, so their policies are specified but not yet exercised. `health-edu` **is** live on `fitness` and must be implemented and tested in the MVP.
+| Policy label | Applies to | Where the boundary actually lives | Core requirement |
+|---|---|---|---|
+| `health-edu` | `fitness` | `prompts/fitness.md` §6 | Education and lifestyle only. No diagnosis, treatment, prescription, or promised outcome. Pain, injury, pregnancy, chronic disease → referral. |
+| `crisis-escalation` | `mental` | `prompts/mental.md` §6.10 | Any self-harm signal, psychosis, or inability to function stops the wellness content entirely and hands off. Never diagnose. Never claim to replace a psychologist. |
+| `financial-edu` | `finance` | `prompts/finance.md` §6 | Financial education only. No products, platforms, or tickers; no return or principal guarantees; no "should I buy this" verdict. |
+| `minor-safety` | `parenting` | `prompts/parenting.md` §6.8 | Age-appropriate content, no emotional dependency, no diagnosis of a child, no punitive technique. Harm or developmental concern → referral. |
 
-Output filters must be a safety net, not the primary mechanism. The primary mechanism is the system prompt. A filter that fires constantly means the prompt is wrong.
+**Why there is no engine.** A policy engine with no consumer is worse than none: it reads as coverage while enforcing nothing. Adding one would be a Phase 2 change with its own acceptance criteria, not an MVP one.
+
+**Why `crisis-escalation` is a single threshold, not the four tiers this section used to specify.** Normal → Concern → High Risk → Escalation invites a model to place a disclosure in the middle tier and keep going. Every tier below the last one is a place where the answer continues, and the cost of continuing is asymmetric: the worst case of stopping too early is that a user is pointed at help they did not need; the worst case of continuing is that they are not. The prompt therefore has one threshold and names the signals that cross it.
+
+**Enforcement is the prompt; verification is human.** No runtime code reads `safetyPolicy` and no test exercises it. `06_ACCEPTANCE.md` I3–I6 cover `fitness` and reflect behaviour that has been built. I13–I18 cover `mental`, `finance`, and `parenting` and **have not been run** — they are the reason those three ship as "written and built" rather than "verified".
 
 ---
 

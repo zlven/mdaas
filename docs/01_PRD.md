@@ -34,7 +34,7 @@ If any of those nine steps is confusing enough to lose the visitor, the demo has
 | # | Item |
 |---|---|
 | 1 | Landing page |
-| 2 | Agent grid — all 9 visible, 4 functional |
+| 2 | Agent grid — all 9 visible, all 9 functional |
 | 3 | Agent workspace — chat, streaming, markdown |
 | 4 | BYOK settings — provider, key, model, verification |
 | 5 | Agent-scoped RAG, in-browser |
@@ -88,7 +88,7 @@ Four pages. No more.
 
 ### 3.2 `/agents` — Expert directory
 
-All 9 agents. Cards for the four functional agents link to their workspace; the five `Coming Soon` cards are visibly inert (no hover lift, no cursor change, no navigation).
+All 9 agents, each linking to its own workspace. The `Coming Soon` treatment — inert card, no hover lift, no cursor change, no navigation — is still implemented and specified; **no agent currently renders with it** (`00_PRODUCT_BRIEF.md` §4).
 
 Filters are **not** in the MVP — nine cards fit on one screen.
 
@@ -122,7 +122,7 @@ Right rail collapses below `lg`. Below `md`, chat takes the full viewport and th
 
 The tools strip is one line tall however many tools an agent declares; the selected tool's panel opens below it.
 
-Opening a `Coming Soon` agent's URL directly must render the agent's description with a clear "not available yet" state and **no input box**.
+Opening a `Coming Soon` agent's URL directly must render the agent's description with a clear "not available yet" state and **no input box**. This path is unreachable today — it exists so that staging the next agent does not require writing a new page.
 
 ### 3.4 `/settings` — Model provider
 
@@ -198,7 +198,7 @@ Requirements:
 
 ## 7. Agent-scoped RAG
 
-`office` retrieves only from `knowledge/office/`. `creator` only from `knowledge/creator/`. `fitness` only from `knowledge/fitness/`. `study` only from `knowledge/study/`.
+`office` retrieves only from `knowledge/office/`. `creator` only from `knowledge/creator/`. `fitness` only from `knowledge/fitness/`. `study` only from `knowledge/study/`. The same holds for `mental`, `finance`, `style`, `career` and `parenting` — nine knowledge directories, nine indexes, no sharing.
 
 **Never mix.** This is structurally enforced — the browser only ever downloads the selected agent's index (`02_TECH_SPEC.md` §4).
 
@@ -264,7 +264,7 @@ Output sections: **Goal · Weekly Schedule · Session Detail · Lifestyle Sugges
 
 ### 8.5 Not in the MVP
 
-The five `Coming Soon` agents' workflows. Do not build speculative workflow infrastructure for them. (`study` ships functional with none — a workflow would have to be designed, not inferred, and nothing in the demo needs it.)
+Workflows for any agent other than the three above. Six of the nine agents ship functional with `workflows: []`, `study` among them — a workflow has to be designed, not inferred, and nothing in the demo needs a seventh. Do not build speculative workflow infrastructure.
 
 ---
 
@@ -301,7 +301,7 @@ A raw stack trace, a provider's JSON error body, or an English SDK error string 
 | RAG returned nothing | Not an error. The answer proceeds and notes it is answering from general knowledge. | |
 | Upload with no file | Placeholder naming the accepted formats | |
 | Settings, never configured | What BYOK is and why it exists | |
-| Coming Soon agent | What this expert will do, and that it is not ready | Honest, not teasing |
+| Coming Soon agent | What this expert will do, and that it is not ready | Honest, not teasing. No agent reaches this state today |
 
 ---
 
@@ -313,7 +313,7 @@ Required, not decorative.
 - Every agent answer is attributable to AI.
 - Demo output shown in marketing material is labelled.
 
-Applies to all agents; most load-bearing for `fitness` (health) and, later, `mental` (wellness) and `parenting` (minors). Required by China's anthropomorphic-AI rules and the EU AI Act's transparency provisions — and it costs almost nothing to implement. See `00_PRODUCT_BRIEF.md` §12.
+Applies to all agents; most load-bearing for `fitness` (health), `mental` (wellness), and `parenting` (minors). Required by China's anthropomorphic-AI rules and the EU AI Act's transparency provisions — and it costs almost nothing to implement. See `00_PRODUCT_BRIEF.md` §12.
 
 ---
 

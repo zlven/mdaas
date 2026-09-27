@@ -88,7 +88,7 @@ If those five steps work, the project has crossed from "AI chat demo" to "Vertic
 
 ## 4. The nine agents
 
-The UI shows all nine. **Four are functional**; five are visible but marked `Coming Soon`.
+The UI shows all nine, and **all nine are functional**. Every one has its own prompt and its own knowledge base.
 
 | # | ID | Name | Status |
 |---|---|---|---|
@@ -96,20 +96,24 @@ The UI shows all nine. **Four are functional**; five are visible but marked `Com
 | 2 | `creator` | 📱 Creator Growth Expert | **Functional** |
 | 3 | `fitness` | 🏋 Fitness & Lifestyle Expert | **Functional** |
 | 4 | `study` | 📚 Study Planning Expert | **Functional** |
-| 5 | `mental` | 🧠 Mental Wellness Expert | Coming Soon |
-| 6 | `finance` | 💰 Personal Finance Education Expert | Coming Soon |
-| 7 | `style` | 👗 Style & Outfit Expert | Coming Soon |
-| 8 | `career` | 🎯 Career & Interview Expert | Coming Soon |
-| 9 | `parenting` | 🧒 Parenting Expert | Coming Soon |
+| 5 | `mental` | 🧠 Mental Wellness Expert | **Functional** |
+| 6 | `finance` | 💰 Personal Finance Education Expert | **Functional** |
+| 7 | `style` | 👗 Style & Outfit Expert | **Functional** |
+| 8 | `career` | 🎯 Career & Interview Expert | **Functional** |
+| 9 | `parenting` | 🧒 Parenting Expert | **Functional** |
 
-**A `Coming Soon` agent must not open a chat that pretends to work.** It may show its description, capabilities, and a disabled state. See `AGENT_CODING_PROMPT.md` §7.
+**`enabled: false` is still the mechanism for staging an agent**, and the `Coming Soon` card, the disabled workspace, and `NOT_IMPLEMENTED_PROMPT` all still exist. No agent currently uses them. Deleting them would be the wrong move: the next agent added is staged the same way, and a half-configured "just hidden" agent is exactly how an unreviewed safety obligation ships.
 
-### Why these four first
+### Why these four came first
+
+The first four were built first because they were the ones whose expertise could be written without a dedicated safety review:
 
 - `office` — the B2B flagship; the clearest ROI story.
 - `creator` — carries the most impressive single workflow (30-day content plan).
 - `fitness` — the clearest consumer use case, and the one that exercises the safety-policy machinery (health disclaimers).
 - `study` — the largest single audience the four address, and the second one whose prompt carries a safety boundary of its own: sustained low mood or any self-harm signal stops the planning answer and hands off to a professional.
+
+The remaining five followed once `study` had proved the C4 path (one config, one prompt, one knowledge directory, no registry edit). Three of them — `mental`, `finance`, `parenting` — carry safety boundaries that **nothing in the runtime enforces**. Their prompts state those boundaries; `06_ACCEPTANCE.md` I13–I18 are the human checks, and until those have been run on a real browser with a real key, "shipped" for those three means "written and built", not "verified".
 
 ---
 
@@ -241,6 +245,8 @@ Four of the nine domains (health, mental wellness, finance, minors) carry real r
 - **Mental wellness** (`mental`): requires a crisis-escalation policy with distinct risk tiers. Must never claim to replace a psychologist or doctor.
 - **Finance** (`finance`): financial *education*, never financial *advice*. No stock picks, no return guarantees.
 - **Minors** (`parenting`): age gating, data minimization, no emotional dependency, no AI-driven diagnosis of a child.
+
+**All four are now live agents**, not reserved policies. Each one's boundary lives in its prompt (`prompts/<id>.md` §六, the last numbered rule). Nothing in the runtime reads `AgentConfig.safetyPolicy` — there is no policy engine, and adding one with no consumer would only make the coverage look larger than it is. **The enforcement is the prompt; the verification is human.** `06_ACCEPTANCE.md` I3–I6 cover `fitness`; I13–I18 cover the other three and **have not been run**.
 
 Two obligations apply platform-wide:
 

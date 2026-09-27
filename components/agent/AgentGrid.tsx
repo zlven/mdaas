@@ -4,10 +4,9 @@ import type { AgentConfig } from "@/lib/agents/types";
 /**
  * The agent matrix — docs/03_UI_UX_SPEC.md §3, §4.
  *
- * Ordering comes from `listAgents()`, which puts the four working agents first
- * (docs/02_TECH_SPEC.md §5). Worth knowing when editing here: the grid must not
- * re-sort, because sorting by `enabled` in the view would be the same decision
- * made in two places.
+ * Ordering comes from `registry.ts` (docs/02_TECH_SPEC.md §5). Worth knowing
+ * when editing here: the grid must not re-sort, because ordering in the view
+ * would be the same decision made in two places.
  */
 export function AgentGrid({ agents }: { agents: AgentConfig[] }) {
   return (

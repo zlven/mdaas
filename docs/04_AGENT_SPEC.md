@@ -183,23 +183,29 @@ Output style: concrete and schedule-shaped. **Every plan names what to do this w
 
 This is the agent added since C4 was written, and it is the evidence that C4 holds: one config, one prompt, one knowledge directory, **no edit to `registry.ts`** — it was already registered as `Coming Soon`. See `07_ROADMAP.md` §9 #13.
 
-### 4.5–4.9 The five `Coming Soon` agents
+### 4.5–4.9 The five later agents — **functional**
 
-Configuration-level only. Each requires name, Chinese name, icon, category, description, capability list, and `enabled: false`.
+These were the `Coming Soon` group. They are now written and enabled, and this section replaces the instruction that used to stand here — that their prompts must not be written in the MVP.
 
-| ID | Icon | Role | Policy reserved |
-|---|---|---|---|
-| `mental` | 🧠 | 心理健康情绪陪伴 — mood tracking, stress, mindfulness | **`crisis-escalation`** |
-| `finance` | 💰 | 个人理财资产配置 **教育** | `financial-edu` |
-| `style` | 👗 | 穿搭美学形象设计 | `content-default` |
-| `career` | 🎯 | 职场求职面试 | `content-default` |
-| `parenting` | 🧒 | 亲子教育陪伴 | **`minor-safety`** |
+| ID | Icon | Role | Profile · Policy | Knowledge |
+|---|---|---|---|---|
+| `mental` | 🧠 | 心理健康情绪陪伴 — mood, stress, mindfulness, sleep | `balanced` · **`crisis-escalation`** | `knowledge/mental/` |
+| `finance` | 💰 | 个人理财 **教育** — budgeting, allocation, risk, insurance | `reasoning` · **`financial-edu`** | `knowledge/finance/` |
+| `style` | 👗 | 穿搭美学形象设计 — fit, colour, occasion, wardrobe | `creative` · `content-default` | `knowledge/style/` |
+| `career` | 🎯 | 职场求职面试 — CV, interview, negotiation, direction | `reasoning` · `content-default` | `knowledge/career/` |
+| `parenting` | 🧒 | 亲子教育陪伴 — communication, habits, emotion, age stages | `balanced` · **`minor-safety`** | `knowledge/parenting/` |
 
-**Do not write their system prompts in the MVP.** Do not create `prompts/<id>.md` for them, do not create their knowledge directories, and do not build placeholder workflows. Their `systemPrompt` resolves to a clearly-marked stub that can never be reached, because `enabled: false` blocks the workspace from rendering an input (`01_PRD.md` §3.3).
+None declares a workflow (`workflows: []`), and none declares a tool. All five carry a `profile`.
 
-Writing five unused prompts would be exactly the speculative surface area the MVP scope excludes — and worse, unwritten-but-shipped prompts for `mental` and `parenting` would carry safety obligations that nothing verifies.
+**The three that carry a safety boundary are `mental`, `finance`, and `parenting`.** Their obligations are written as the last numbered rule of §六 in each prompt:
 
-Their `safetyPolicy` values are recorded above so Phase 2 does not have to rediscover them. Note in particular that `mental`, `finance`, and `parenting` are the three that no one should ship without a dedicated review.
+- `mental` §6.10 — one threshold, not tiers: any self-harm signal, psychosis, or inability to function stops the wellness content and hands off. It names **routes** to help (a trusted person, a hospital psychiatric or psychology department, a school or workplace counselling centre, the local emergency number) and deliberately names **no** specific helpline, institution, or number. Inventing one is worse than naming none, and a model asked for a crisis resource will produce a confident, plausible, wrong one.
+- `finance` §6 — no product, platform, ticker, or "should I buy this" verdict; no return or principal figures; risk disclosure must be specific rather than the phrase 「投资有风险」; scam patterns named outright.
+- `parenting` §6.8 — a referral boundary alongside `mental`'s; plus no diagnosis of a child (no 多动 / 自闭 / 感统失调 labels, **including when the parent supplies one**), and no punitive technique.
+
+**Nothing in the runtime enforces any of this.** There is no policy engine — `lib/safety/` does not exist, and `AgentConfig.safetyPolicy` is a label read by nothing (`02_TECH_SPEC.md` §13). The enforcement is the prompt; the verification is human, and it is `06_ACCEPTANCE.md` I3–I6 (`fitness`) and **I13–I18 (these three, not yet run)**.
+
+That is the honest status of three agents that were deliberately held back. Writing them was the smaller half of shipping them; running I13–I18 against a real browser and a real key is the other half, and it has not been done.
 
 ---
 

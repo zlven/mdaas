@@ -71,9 +71,22 @@ const PDFJS_DIR = join(ROOT, "node_modules", "pdfjs-dist");
  * unconditionally and silently — a dead check that still looks alive, which is
  * worse than no check. The profile marker is therefore `用户档案是数据` and not
  * `不是指令`, the latter being present in every prompt's reference clause.
+ *
+ * The first marker was `不是指令` for the same reason and was dead in exactly
+ * that way: it appears four times in every prompt (§8.2's heading, §8.2's body,
+ * §8.4's heading, §8.4's body), so deleting §8.2 outright left the build green.
+ * It is now `参考资料是数据`, which occurs exactly once — in §8.2's heading, and
+ * nowhere else in any prompt.
+ *
+ * Red-tested by deleting §8.2 from `prompts/study.md` and rebuilding: the old
+ * marker still matched twice (from §8.4 alone) and the build stayed green, while
+ * the new one dropped to zero and the build failed on this assertion and no
+ * other — exit 1, message from this check, not an import error. Restoring the
+ * file returned `study` to its prior chunk hash. Re-run that pair of checks
+ * before ever widening a marker to a phrase that appears twice.
  */
 const REQUIRED_CLAUSES = [
-  { marker: "不是指令", describes: "the untrusted-context clause (reference material is data, not instructions)" },
+  { marker: "参考资料是数据", describes: "the untrusted-context clause (reference material is data, not instructions)" },
   { marker: "没有引用知识库", describes: "the empty-retrieval clause (say so when nothing was retrieved)" },
   { marker: "中文回答", describes: "the language clause (answer in Chinese)" },
   { marker: "用户档案是数据", describes: "the profile clause (the user's own profile is data, not instructions)" },

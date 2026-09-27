@@ -27,9 +27,10 @@ import { study } from "@/lib/agents/configs/study";
 import { style } from "@/lib/agents/configs/style";
 
 /**
- * Display order. The four that work come first, because the grid is the
- * product argument (docs/03_UI_UX_SPEC.md §3) and a visitor should hit a
- * working agent before a "Coming Soon" card.
+ * Display order. The four original agents come first and the five added later
+ * follow, which is also the order their knowledge bases were written in. It is
+ * presentation only — `enabled` is what decides whether a card is openable, and
+ * the grid deliberately does not re-sort on it (see `AgentGrid`).
  */
 const AGENTS: AgentConfig[] = [
   office,

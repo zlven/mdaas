@@ -1,14 +1,15 @@
 /**
- * The system prompt carried by agents that are not implemented.
+ * The system prompt carried by an agent that has been registered but not built.
  *
- * docs/04_AGENT_SPEC.md §4.4 is explicit that the five Coming Soon agents must
- * not have real prompts written in the MVP: shipping an unverified prompt for
- * `mental` or `parenting` would carry safety obligations that nothing checks.
+ * **Nothing imports this today.** All nine agents are `enabled: true` and all
+ * nine have a real prompt. It stays because `AgentConfig.systemPrompt` is a
+ * required string, so the staging path — register the config first, write the
+ * content later — needs *something* to put in the field, and `enabled: false`
+ * is what makes it unreachable.
  *
- * But `AgentConfig.systemPrompt` is a required string, so the field is filled
- * with something that announces itself. The important property is not that this
- * text is good — it is that `enabled: false` makes it unreachable, so if it ever
- * reaches a model, the UI guard has failed and the reply will say so.
+ * The important property is not that this text is good but that it announces
+ * itself: if it ever reaches a model, the `enabled` guard has failed, and the
+ * reply says so instead of improvising as an expert it is not.
  */
 export const NOT_IMPLEMENTED_PROMPT = [
   "【未实现】本专家尚未开放。",

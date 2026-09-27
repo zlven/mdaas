@@ -178,7 +178,7 @@ Cards are **product modules**, not dashboard widgets.
 
 - Grid: 1 column mobile, 2 at `sm`, 3 at `lg`, 4 at `xl`. Gap 16–20px.
 - The **whole card** is the click target for available agents.
-- `Coming Soon` cards: 60% opacity, `cursor: default`, **no hover state at all**, no arrow. The absence of the hover response is what communicates "inert". Do not rely on the badge alone.
+- `Coming Soon` cards: 60% opacity, `cursor: default`, **no hover state at all**, no arrow. The absence of the hover response is what communicates "inert". Do not rely on the badge alone. *(No agent renders in this state today — every card is 可用. The spec stands so that staging the next agent is a config change and not a design decision.)*
 - Available status: a small filled dot in `--success` plus the word. Not a coloured pill badge.
 - Card height is uniform within a row — capability tags must not cause ragged rows. Clamp or fix the tag row height.
 
